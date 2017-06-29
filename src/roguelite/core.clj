@@ -1,40 +1,38 @@
 (ns roguelite.core
   (:require [quil.core :as q]
-            [quil.middleware :as m])
+            [quil.middleware :as m]
+            [roguelite.game :as game])
   (:import [java.awt.event KeyEvent]))
 
 
 (def field-size [500 500])
 
 (defn setup []
-  ; Set frame rate to 30 frames per second.
   (q/frame-rate 30)
-  ; Set color mode to HSB (HSV) instead of default RGB.
-  (q/color-mode :hsb)
-  ; setup function returns initial state. It contains
-  ; circle color and position.
-  {:player {:x 10 :y 10}})
+  (q/color-mode :rgb)
+  ; setup function returns initial state.
+  (game/new-game))
+
 
 (defn update-state [state]
-  ; Update sketch state by changing circle color and position.
   state)
 
+
+(defn draw-gameobject [draw-region gobject]
+  (q/with-fill (:color gobject)
+    (let [nx (* 10 (:posx gobject))
+          ny (* 10 (:posy gobject))]
+      (q/text-char (:character gobject) nx ny))))
+
+
 (defn draw-state [state]
-  ; Clear the sketch by filling it with light-grey color.
-  (q/background 240)
-  ; Set circle color.
-  (q/fill 0 255 255)
-  ; Calculate x and y coordinates of the circle.
-  (let [x (-> state :player :x)
-        y (-> state :player :y)
-        [sizex sizey] field-size
-        nx (* 10 x)
-        ny (* 10 y)]
-    ; Move origin point to the center of the sketch.
-    (q/with-translation [(/ (q/width) 2)
-                         (/ (q/height) 2)]
-      ; Draw the circle.
-      (q/ellipse nx ny 100 100))))
+  (q/background 0)
+  (doseq [gobject (:objects state)]
+    (draw-gameobject [] gobject))
+
+  (q/fill 0 255 0)
+  (draw-gameobject [] (:player state)))
+
 
 (defn event->direction [event]
   (case (:key event)
@@ -45,11 +43,14 @@
     [0 0]))
 
 
+(def tobject (game/->GameObject 10 10 \@ [0 0 0] :player))
+
+(game/move-gobject tobject [10 10])
+
+
 (defn key-pressed [state event]
-  (let [[dx dy] (event->direction event)]
-    (-> state
-        (update-in [:player :x] #(+ % dx))
-        (update-in [:player :y] #(+ % dy)))))
+  (let [dir (event->direction event)]
+    (update-in state [:player] #(game/move-gobject % dir))))
 
 
 (q/defsketch roguelite
