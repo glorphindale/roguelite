@@ -20,38 +20,49 @@
 (defn key-pressed [state event]
   (let [dir (event->direction event)
         world (:world state)]
-    (update-in state [:player] #(game/move-gobject world % dir))))
+    (case (:key event)
+      (:r) (game/new-game field-size)  ;;; Restart
+      (update-in state [:player] #(game/move-gobject world % dir)))))
 
 
 ;;;;; Drawing
 (def tile-size 30)
 
+(def tile-colors
+  {:wall [20 20 20]
+   :floor [10 10 10]
+   :player [255 255 0]
+   :zombie [127 255 127]})
+
+
 (defn draw-gameobject [draw-region gobject]
-  (q/with-fill (:color gobject)
+  (q/with-fill ((:otype gobject) tile-colors)
     (let [nx (* tile-size (:posx gobject))
           ny (* tile-size (:posy gobject))]
       (q/text-char (:character gobject) nx ny))))
 
+
 (defn draw-tile [tile]
   (if (:passable tile)
-    (q/with-fill [0 0 0]
-      (q/quad 0 0 0 tile-size tile-size tile-size tile-size 0))
-    (q/with-fill (:color tile)
-      (q/rect 1 1 (dec tile-size) (dec tile-size)))))
+    (q/with-fill (:floor tile-colors)
+      (q/rect 1 1 (dec tile-size) (dec tile-size)))
+    (q/with-fill (:wall tile-colors)
+      (q/rect 0 0 tile-size tile-size))))
+
 
 (defn draw-state [state]
+  (q/stroke-weight 0)
   (q/background 0)
   (doseq [[x column] (:world state)]
     (doseq [[y tile] column]
       (q/with-translation [(* tile-size x) (* tile-size y)]
         (draw-tile tile))))
 
-  (doseq [gobject (:objects state)]
-    (draw-gameobject [] gobject))
-
-  (q/fill 0 255 0)
   (q/with-translation [(/ tile-size 2) (/ tile-size 2)]
-    (draw-gameobject [] (:player state))))
+    (doseq [gobject (:objects state)]
+      (draw-gameobject [] gobject))
+    (q/with-fill (:player tile-colors)
+      (draw-gameobject [] (:player state)))))
 
 
 ;;;;; Setup

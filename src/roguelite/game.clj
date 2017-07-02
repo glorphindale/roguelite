@@ -1,11 +1,11 @@
 (ns roguelite.game)
 
-(defrecord GameObject [posx posy character color otype])
-(defrecord Tile [passable blocks-sight color])
+(defrecord GameObject [posx posy character otype])
+(defrecord Tile [passable blocks-sight])
 
 (defn make-map [[mx my]]
   (letfn [(random-tile []
-            (->Tile (rand-nth [true true true false]) false [20 20 20]))
+            (->Tile (rand-nth [true true true false]) false))
           (random-row []
             (zipmap (range 0 my) (repeatedly random-tile)))]
     (zipmap (range 0 mx) (repeatedly random-row))))
@@ -26,6 +26,6 @@
       gobject)))
 
 (defn new-game [map-size]
-  {:player (->GameObject 0 0 \@ [255 255 0] :player)
-   :objects [(->GameObject 5 5 \Z [127 255 127] :zombie)]
+  {:player (->GameObject 0 0 \@ :player)
+   :objects [(->GameObject 5 5 \Z :zombie)]
    :world (make-map map-size)})
