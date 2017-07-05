@@ -5,7 +5,7 @@
   (:import [java.awt.event KeyEvent]))
 
 
-(def field-size [10 15])
+(def field-size [11 15])
 (def screen-size [500 500])
 
 ;;; Input processing

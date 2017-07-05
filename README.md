@@ -1,6 +1,6 @@
 # roguelite
 
-Attempt to make a roguelike in Clojure by followint /r/roguelikedev tutorial: http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod 
+Attempt to make a roguelike in Clojure by following /r/roguelikedev tutorial: http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod
 
 ## Usage
 
