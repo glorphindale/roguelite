@@ -8,3 +8,6 @@
     ~~TODO: find a way to move colors out of the game.clj module~~
     TODO: unify player and objects, find a way to move player via the :objects list - is it really needed?
     * Moved out colors from the game.clj, tune some colors
+
+06.07.2017:
+    + Fixed a bunch of stupid bugs in rendering and printing

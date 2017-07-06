@@ -5,8 +5,8 @@
   (:import [java.awt.event KeyEvent]))
 
 
-(def field-size [11 15])
-(def screen-size [500 500])
+(def field-size [30 30])
+(def screen-size [700 700])
 
 ;;; Input processing
 (defn event->direction [event]
@@ -26,10 +26,10 @@
 
 
 ;;;;; Drawing
-(def tile-size 30)
+(def tile-size 16)
 
 (def tile-colors
-  {:wall [20 20 20]
+  {:wall [60 60 60]
    :floor [10 10 10]
    :player [255 255 0]
    :zombie [127 255 127]})
@@ -45,20 +45,25 @@
 (defn draw-tile [tile]
   (if (:passable tile)
     (q/with-fill (:floor tile-colors)
-      (q/rect 1 1 (dec tile-size) (dec tile-size)))
+      (q/text-char \. 0 0))
     (q/with-fill (:wall tile-colors)
-      (q/rect 0 0 tile-size tile-size))))
+      (q/text-char \# 0 0))))
 
 
 (defn draw-state [state]
   (q/stroke-weight 0)
   (q/background 0)
-  (doseq [[x column] (:world state)]
-    (doseq [[y tile] column]
-      (q/with-translation [(* tile-size x) (* tile-size y)]
-        (draw-tile tile))))
 
-  (q/with-translation [(/ tile-size 2) (/ tile-size 2)]
+  (q/with-fill [255 255 0]
+    (q/with-translation [20 20]
+      (q/text (str "Player at " (get-in state [:player :posx]) ":" (get-in state [:player :posy])) 0 0)))
+
+  (q/with-translation [100 100]
+    (doseq [[x column] (:world state)]
+      (doseq [[y tile] column]
+        (q/with-translation [(* tile-size x) (* tile-size y)]
+          (draw-tile tile))))
+
     (doseq [gobject (:objects state)]
       (draw-gameobject [] gobject))
     (q/with-fill (:player tile-colors)
@@ -83,9 +88,15 @@
   ; update-state is called on each iteration before draw-state.
   :update update-state
   :draw draw-state
-  :features [:keep-on-top]
+  :features []
   :key-pressed key-pressed
   ; This sketch uses functional-mode middleware.
   ; Check quil wiki for more info about middlewares and particularly
   ; fun-mode.
   :middleware [m/fun-mode])
+
+(defn -main
+  "Command-line entry point."
+  [& raw-args]
+  (println "Hello")
+)
