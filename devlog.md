@@ -11,3 +11,6 @@
 
 06.07.2017:
     + Fixed a bunch of stupid bugs in rendering and printing
+
+07.07.2017:
+    + Added a proper room generation with corridors between, looks good enough

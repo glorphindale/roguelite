@@ -49,20 +49,58 @@
          (<= y11 y22)
          (>= y21 y12))))
 
+(def room-config {:max-height 7 :max-width 7 :max-rooms 15})
+
+(defn random-room [[max-x max-y] {:keys [max-height max-width]}]
+  (let [start-x (rand-int (dec max-x))
+        start-y (rand-int (dec max-y))
+        width (+ 2 (rand-int (dec max-width))) 
+        height (+ 2 (rand-int (dec max-height)))]
+    (make-room start-x start-y width height)))
+
 ;; ---------------------
-(defn simple-world [map-size]
-  (-> (make-map map-size)
-      (carve-room (->Room 1 1 4 4))
-      (carve-room (->Room 5 1 10 6))
-      (carve-room (->Room 5 7 10 11))
-      (carve-h-tunnel 3 5 2)
-      (carve-v-tunnel 6 5 7)
-      ))
+
+(defn gen-rooms [map-size room-config]
+  (let [max-rooms (:max-rooms room-config)]
+    (loop [iters (* max-rooms 2)
+           result []]
+      (if (pos? iters)
+        (let [new-room (random-room map-size room-config)
+              intersections (filter #(intersects? % new-room) result)]
+          (if (empty? intersections)
+            (recur (dec iters) (conj result new-room))
+            (recur (dec iters) result)))
+        result))))
+
+(defn connect-two-rooms [world room1 room2]
+  (let [[cx1 cy1] (room-center room1)
+        [cx2 cy2] (room-center room2)]
+    (if (> (rand) 0.5)
+      (-> world
+          (carve-h-tunnel cx1 cx2 cy1)
+          (carve-v-tunnel cx2 cy1 cy2)) 
+      (-> world
+          (carve-v-tunnel cx1 cy1 cy2)
+          (carve-h-tunnel cx1 cx2 cy2)) 
+      )))
+
+(defn make-pairs [rooms]
+  (partition 2 (interleave rooms (rest rooms))))
+
+(defn simple-world [map-size room-config]
+  (let [first-room (make-room 1 1 4 4)
+        full-map (make-map map-size) 
+        rooms (conj (gen-rooms map-size room-config) first-room)
+        world-with-rooms (reduce #(carve-room %1 %2) full-map rooms)]
+    (letfn [(connect [world [room1 room2]] (connect-two-rooms world room1 room2))]
+      (reduce connect world-with-rooms (make-pairs rooms)))
+    ))
 
 (defn new-game [map-size]
-  {:player (->GameObject 7 7 \@ :player)
-   :objects [(->GameObject 5 5 \Z :zombie)]
-   :world (simple-world map-size)})
+  (let [world (simple-world map-size room-config)]
+    {:player (->GameObject 2 2 \@ :player)  ;;; Find a way to get an empty tile to place player
+     :objects []
+     :world world}))
 
 
 ;; ---------------------

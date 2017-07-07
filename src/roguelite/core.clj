@@ -29,7 +29,7 @@
 (def tile-size 16)
 
 (def tile-colors
-  {:wall [60 60 60]
+  {:wall [80 80 80]
    :floor [10 10 10]
    :player [255 255 0]
    :zombie [127 255 127]})
