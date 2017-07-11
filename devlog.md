@@ -14,3 +14,7 @@
 
 07.07.2017:
     + Added a proper room generation with corridors between, looks good enough
+
+11.07.2017:
+    + Add simple torch lighting
+    + Make room gen create a nice closed dungeon

@@ -4,6 +4,7 @@
             [roguelite.game :as game])
   (:import [java.awt.event KeyEvent]))
 
+(set! *warn-on-reflection* true)
 
 (def field-size [30 30])
 (def screen-size [700 700])
@@ -29,8 +30,8 @@
 (def tile-size 16)
 
 (def tile-colors
-  {:wall [80 80 80]
-   :floor [10 10 10]
+  {:wall {true [120 120 120] false [40 40 40]}
+   :floor {true [40 40 40] false [30 30 30]}
    :player [255 255 0]
    :zombie [127 255 127]})
 
@@ -42,11 +43,11 @@
       (q/text-char (:character gobject) nx ny))))
 
 
-(defn draw-tile [tile]
+(defn draw-tile [tile is-lit]
   (if (:passable tile)
-    (q/with-fill (:floor tile-colors)
+    (q/with-fill (get-in tile-colors [:floor is-lit])
       (q/text-char \. 0 0))
-    (q/with-fill (:wall tile-colors)
+    (q/with-fill (get-in tile-colors [:wall is-lit])
       (q/text-char \# 0 0))))
 
 
@@ -62,7 +63,8 @@
     (doseq [[x column] (:world state)]
       (doseq [[y tile] column]
         (q/with-translation [(* tile-size x) (* tile-size y)]
-          (draw-tile tile))))
+          (let [is-lit (game/lit? [x y] [(-> state :player :posx) (-> state :player :posy)])]
+            (draw-tile tile is-lit)))))
 
     (doseq [gobject (:objects state)]
       (draw-gameobject [] gobject))

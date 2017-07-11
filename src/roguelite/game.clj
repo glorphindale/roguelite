@@ -4,6 +4,13 @@
 (defrecord Tile [passable blocks-sight])
 (defrecord Room [x1 y1 x2 y2])
 
+(def torch-radius 5)
+
+
+(defn lit? [[^Float cx ^Float cy] [^Float px ^Float py]]
+  (< (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2))) 
+     torch-radius))
+
 (defn make-room [x y width height]
   (->Room x y (+ x width) (+ y height)))
 
@@ -52,11 +59,11 @@
 (def room-config {:max-height 7 :max-width 7 :max-rooms 15})
 
 (defn random-room [[max-x max-y] {:keys [max-height max-width]}]
-  (let [start-x (rand-int (dec max-x))
-        start-y (rand-int (dec max-y))
-        width (+ 2 (rand-int (dec max-width))) 
-        height (+ 2 (rand-int (dec max-height)))]
-    (make-room start-x start-y width height)))
+  (let [start-x (inc (rand-int (dec max-x)))
+        start-y (inc (rand-int (dec max-y)))
+        end-x (min (- max-x 2) (+ start-x (rand-int max-width))) 
+        end-y (min (- max-y 2) (+ start-y (rand-int max-height)))]
+    (->Room start-x start-y end-x end-y)))
 
 ;; ---------------------
 
@@ -102,7 +109,6 @@
      :objects []
      :world world}))
 
-
 ;; ---------------------
 (defn get-tile [world-map [mx my]]
   (get-in world-map [mx my]))
@@ -118,4 +124,3 @@
           (update-in [:posx] #(+ % dx))
           (update-in [:posy] #(+ % dy)))
       gobject)))
-
