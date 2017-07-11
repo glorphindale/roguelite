@@ -8,7 +8,7 @@
 
 
 (defn lit? [[^Float cx ^Float cy] [^Float px ^Float py]]
-  (< (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2))) 
+  (< (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2)))
      torch-radius))
 
 (defn make-room [x y width height]
@@ -61,7 +61,7 @@
 (defn random-room [[max-x max-y] {:keys [max-height max-width]}]
   (let [start-x (inc (rand-int (dec max-x)))
         start-y (inc (rand-int (dec max-y)))
-        end-x (min (- max-x 2) (+ start-x (rand-int max-width))) 
+        end-x (min (- max-x 2) (+ start-x (rand-int max-width)))
         end-y (min (- max-y 2) (+ start-y (rand-int max-height)))]
     (->Room start-x start-y end-x end-y)))
 
@@ -85,29 +85,31 @@
     (if (> (rand) 0.5)
       (-> world
           (carve-h-tunnel cx1 cx2 cy1)
-          (carve-v-tunnel cx2 cy1 cy2)) 
+          (carve-v-tunnel cx2 cy1 cy2))
       (-> world
           (carve-v-tunnel cx1 cy1 cy2)
-          (carve-h-tunnel cx1 cx2 cy2)) 
+          (carve-h-tunnel cx1 cx2 cy2))
       )))
 
 (defn make-pairs [rooms]
   (partition 2 (interleave rooms (rest rooms))))
 
 (defn simple-world [map-size room-config]
-  (let [first-room (make-room 1 1 4 4)
-        full-map (make-map map-size) 
-        rooms (conj (gen-rooms map-size room-config) first-room)
+  (let [full-map (make-map map-size)
+        rooms (gen-rooms map-size room-config)
         world-with-rooms (reduce #(carve-room %1 %2) full-map rooms)]
     (letfn [(connect [world [room1 room2]] (connect-two-rooms world room1 room2))]
-      (reduce connect world-with-rooms (make-pairs rooms)))
-    ))
+      {:tiles (reduce connect world-with-rooms (make-pairs rooms))
+       :rooms rooms})))
 
 (defn new-game [map-size]
-  (let [world (simple-world map-size room-config)]
-    {:player (->GameObject 2 2 \@ :player)  ;;; Find a way to get an empty tile to place player
-     :objects []
-     :world world}))
+  (let [{:keys [rooms tiles]} (simple-world map-size room-config)
+        [px py] (-> rooms first room-center)
+        [zx zy] (-> rooms second room-center)]
+    {:player (->GameObject px py \@ :player)
+     :objects [(->GameObject zx zy \Z :zombie)]
+     :world tiles
+     :rooms rooms}))
 
 ;; ---------------------
 (defn get-tile [world-map [mx my]]

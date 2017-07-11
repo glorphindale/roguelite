@@ -36,7 +36,7 @@
    :zombie [127 255 127]})
 
 
-(defn draw-gameobject [draw-region gobject]
+(defn draw-gameobject [gobject]
   (q/with-fill ((:otype gobject) tile-colors)
     (let [nx (* tile-size (:posx gobject))
           ny (* tile-size (:posy gobject))]
@@ -57,7 +57,10 @@
 
   (q/with-fill [255 255 0]
     (q/with-translation [20 20]
-      (q/text (str "Player at " (get-in state [:player :posx]) ":" (get-in state [:player :posy])) 0 0)))
+      (q/text (str "Player at " (get-in state [:player :posx])
+                            ":" (get-in state [:player :posy])) 0 0)
+      (q/text (str "Zombie at " (get-in state [:objects 0 :posx]) ":"
+                                (get-in state [:objects 0 :posy])) 0 20)))
 
   (q/with-translation [100 100]
     (doseq [[x column] (:world state)]
@@ -66,10 +69,15 @@
           (let [is-lit (game/lit? [x y] [(-> state :player :posx) (-> state :player :posy)])]
             (draw-tile tile is-lit)))))
 
-    (doseq [gobject (:objects state)]
-      (draw-gameobject [] gobject))
-    (q/with-fill (:player tile-colors)
-      (draw-gameobject [] (:player state)))))
+    (let [player (:player state)]
+      (doseq [gobject (:objects state)]
+        (let [{ox :posx oy :posy} gobject
+              {px :posx py :posy} player
+              is-lit (game/lit? [ox oy] [px py])]
+          (if is-lit
+            (draw-gameobject gobject))))
+      (q/with-fill (:player tile-colors)
+        (draw-gameobject player)))))
 
 
 ;;;;; Setup
