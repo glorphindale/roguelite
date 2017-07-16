@@ -4,13 +4,33 @@
 (defrecord Tile [passable blocks-sight])
 (defrecord Room [x1 y1 x2 y2])
 
-(def torch-radius 5)
+;; FOV/raycasting
+(def torch-radius 2)
 
+(defn rad-to-deg [rad]
+  (-> rad (* 180) (/ Math/PI)))
+
+(defn deg-to-rad [deg]
+  (-> deg (* Math/PI) (/ 180)))
 
 (defn lit? [[^Float cx ^Float cy] [^Float px ^Float py]]
   (< (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2)))
      torch-radius))
 
+(defn idxs-on-path [[px py] angle]
+  (let [sx (+ px 0)
+        sy (+ py 0)
+        stepx (Math/cos (deg-to-rad angle))
+        stepy (Math/sin (deg-to-rad angle))]
+    (for [step (range 1 torch-radius)]
+      [(Math/round (+ sx (* step stepx))) (Math/round (+ sy (* step stepy)))])))
+
+(defn is-visible? [[px py] angle tiles]
+  (let [idxs (idxs-on-path [px py] angle)]
+    (letfn [(getter [[tx ty] tiles] (get-in tiles [tx ty :blocks-sight]))]
+      (not-any? #(getter % tiles) idxs))))
+
+;; Room gen
 (defn make-room [x y width height]
   (->Room x y (+ x width) (+ y height)))
 
@@ -101,6 +121,11 @@
     (letfn [(connect [world [room1 room2]] (connect-two-rooms world room1 room2))]
       {:tiles (reduce connect world-with-rooms (make-pairs rooms))
        :rooms rooms})))
+
+(defn empty-world []
+  (let [full-map (make-map [5 5])
+        with-room (carve-room full-map (make-room 1 1 3 3))]
+    with-room))
 
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (simple-world map-size room-config)

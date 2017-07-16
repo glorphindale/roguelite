@@ -6,7 +6,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def field-size [30 30])
+(def field-size [10 10])
 (def screen-size [700 700])
 
 ;;; Input processing
@@ -27,11 +27,11 @@
 
 
 ;;;;; Drawing
-(def tile-size 16)
+(def tile-size 26)
 
 (def tile-colors
-  {:wall {true [120 120 120] false [40 40 40]}
-   :floor {true [40 40 40] false [30 30 30]}
+  {:wall {true [160 160 160] false [40 40 40]}
+   :floor {true [60 60 60] false [30 30 30]}
    :player [255 255 0]
    :zombie [127 255 127]})
 
@@ -43,12 +43,36 @@
       (q/text-char (:character gobject) nx ny))))
 
 
-(defn draw-tile [tile is-lit]
+(defn put-tile [tile is-lit]
   (if (:passable tile)
     (q/with-fill (get-in tile-colors [:floor is-lit])
       (q/text-char \. 0 0))
     (q/with-fill (get-in tile-colors [:wall is-lit])
       (q/text-char \# 0 0))))
+
+(defn draw-tile [tile [x y] [px py] state]
+  (if (game/lit? [x y] [px py])
+    (if (and (= x px) (= y py))
+      (put-tile tile true)
+      (let [angle (-> (Math/atan2 (- y py) (- x px))
+                      (* 180)
+                      (/ Math/PI))]
+        (if (game/is-visible? [px py] angle (:world state))
+          (do (put-tile tile true)    
+              (q/with-fill [0 255 0]
+                (q/rect x y 4 4)))
+          (do (put-tile tile false)
+              (q/with-fill [255 0 0]
+                (q/rect x y 4 4))))))
+    (put-tile tile false)))
+
+(defn draw-tiles [state]
+  (let [px (get-in state [:player :posx])
+        py (get-in state [:player :posy])]
+    (doseq [[x column] (:world state)]
+      (doseq [[y tile] column]
+        (q/with-translation [(* tile-size x) (* tile-size y)]
+          (draw-tile tile [x y] [px py] state))))))
 
 
 (defn draw-state [state]
@@ -63,22 +87,18 @@
                                 (get-in state [:objects 0 :posy])) 0 20)))
 
   (q/with-translation [100 100]
-    (doseq [[x column] (:world state)]
-      (doseq [[y tile] column]
-        (q/with-translation [(* tile-size x) (* tile-size y)]
-          (let [is-lit (game/lit? [x y] [(-> state :player :posx) (-> state :player :posy)])]
-            (draw-tile tile is-lit)))))
+    (draw-tiles state)
 
-    (let [player (:player state)]
+    (let [player (:player state)
+          px (:posx player)
+          py (:posy player)]
       (doseq [gobject (:objects state)]
         (let [{ox :posx oy :posy} gobject
-              {px :posx py :posy} player
               is-lit (game/lit? [ox oy] [px py])]
           (if is-lit
             (draw-gameobject gobject))))
       (q/with-fill (:player tile-colors)
         (draw-gameobject player)))))
-
 
 ;;;;; Setup
 (defn setup []
