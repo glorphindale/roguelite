@@ -22,3 +22,6 @@
 16.07.2017:
     + Attempt to add raycasting for FOV (http://www.roguebasin.com/index.php?title=Simple_and_accurate_LOS_function_for_BlitzMax ), so much bugs
     = Raycasting to nearby cells produces funky results (indexes on path)
+
+17.07.2017:
+    + Fix raycasting (result is probable, but some artifacts remain)

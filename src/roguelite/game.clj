@@ -5,7 +5,7 @@
 (defrecord Room [x1 y1 x2 y2])
 
 ;; FOV/raycasting
-(def torch-radius 2)
+(def torch-radius 5)
 
 (defn rad-to-deg [rad]
   (-> rad (* 180) (/ Math/PI)))
@@ -13,22 +13,36 @@
 (defn deg-to-rad [deg]
   (-> deg (* Math/PI) (/ 180)))
 
-(defn lit? [[^Float cx ^Float cy] [^Float px ^Float py]]
-  (< (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2)))
-     torch-radius))
+(defn dist [[^Float cx ^Float cy] [^Float px ^Float py]]
+  (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2))))
 
-(defn idxs-on-path [[px py] angle]
-  (let [sx (+ px 0)
+(defn lit? [[^Float cx ^Float cy] [^Float px ^Float py]]
+  (< (dist [cx cy] [px py]) torch-radius))
+
+(defn idxs-on-path [[px py] [tx ty]]
+  (let [angle (-> (Math/atan2 (- ty py) (- tx px)) (* 180) (/ Math/PI))
+        sx (+ px 0)
         sy (+ py 0)
         stepx (Math/cos (deg-to-rad angle))
         stepy (Math/sin (deg-to-rad angle))]
-    (for [step (range 1 torch-radius)]
-      [(Math/round (+ sx (* step stepx))) (Math/round (+ sy (* step stepy)))])))
+    (dedupe
+      (for [step (range 1 torch-radius)
+            :let [nx (Math/round (+ sx (* step stepx)))
+                  ny (Math/round (+ sy (* step stepy)))]
+            :while (< 0 (dist [nx ny] [tx ty]))]
+        [nx ny]))))
 
-(defn is-visible? [[px py] angle tiles]
-  (let [idxs (idxs-on-path [px py] angle)]
-    (letfn [(getter [[tx ty] tiles] (get-in tiles [tx ty :blocks-sight]))]
-      (not-any? #(getter % tiles) idxs))))
+(defn is-visible? [[px py] [tx ty] tiles]
+  (let [idxs (concat (idxs-on-path [px py] [tx ty]) [[tx ty]])]
+    (loop [iseq idxs
+           walls-found 0
+           visible true]
+      (if (empty? iseq)
+        visible
+        (let [[x y] (first iseq)
+              blocks (get-in tiles [x y :blocks-sight])
+              visible (or (= walls-found 0) (not blocks))]
+          (recur (rest iseq) (if blocks (+ walls-found 1) walls-found) visible))))))
 
 ;; Room gen
 (defn make-room [x y width height]
@@ -123,9 +137,15 @@
        :rooms rooms})))
 
 (defn empty-world []
-  (let [full-map (make-map [5 5])
-        with-room (carve-room full-map (make-room 1 1 3 3))]
+  (let [full-map (make-map [7 7])
+        with-room (carve-room full-map (make-room 2 2 4 4))]
     with-room))
+
+(defn empty-game []
+  {:world (empty-world)
+   :rooms [(make-room 1 1 3 3)]
+   :player (->GameObject 2 2 \@ :player)
+   :objects []})
 
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (simple-world map-size room-config)

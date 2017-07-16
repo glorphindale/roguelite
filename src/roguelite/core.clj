@@ -6,7 +6,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def field-size [10 10])
+(def field-size [20 20])
 (def screen-size [700 700])
 
 ;;; Input processing
@@ -27,7 +27,7 @@
 
 
 ;;;;; Drawing
-(def tile-size 26)
+(def tile-size 16)
 
 (def tile-colors
   {:wall {true [160 160 160] false [40 40 40]}
@@ -50,20 +50,17 @@
     (q/with-fill (get-in tile-colors [:wall is-lit])
       (q/text-char \# 0 0))))
 
-(defn draw-tile [tile [x y] [px py] state]
-  (if (game/lit? [x y] [px py])
-    (if (and (= x px) (= y py))
+(defn draw-tile [tile [tx ty] [px py] state]
+  (if (game/lit? [tx ty] [px py])
+    (if (and (= tx px) (= ty py))
       (put-tile tile true)
-      (let [angle (-> (Math/atan2 (- y py) (- x px))
-                      (* 180)
-                      (/ Math/PI))]
-        (if (game/is-visible? [px py] angle (:world state))
-          (do (put-tile tile true)    
-              (q/with-fill [0 255 0]
-                (q/rect x y 4 4)))
-          (do (put-tile tile false)
-              (q/with-fill [255 0 0]
-                (q/rect x y 4 4))))))
+      (if (game/is-visible? [px py] [tx ty] (:world state))
+        (do (put-tile tile true)    
+            (q/with-fill [0 0 0]
+              (q/rect tx ty 2 2)))
+        (do (put-tile tile false)
+            (q/with-fill [0 0 0]
+              (q/rect tx ty 2 2)))))
     (put-tile tile false)))
 
 (defn draw-tiles [state]
@@ -105,7 +102,9 @@
   (q/frame-rate 30)
   (q/color-mode :rgb)
   ; setup function returns initial state.
-  (game/new-game field-size))
+  ;(game/new-game field-size)
+  (game/empty-game)
+  )
 
 (defn update-state [state]
   state)
