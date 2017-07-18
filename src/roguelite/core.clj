@@ -1,6 +1,7 @@
 (ns roguelite.core
   (:require [quil.core :as q]
             [quil.middleware :as m]
+            [roguelite.fov :as fov] 
             [roguelite.game :as game])
   (:import [java.awt.event KeyEvent]))
 
@@ -23,15 +24,16 @@
         world (:world state)]
     (case (:key event)
       (:r) (game/new-game field-size)  ;;; Restart
-      (update-in state [:player] #(game/move-gobject world % dir)))))
+      (-> state
+          (update-in [:player] #(game/move-gobject world % dir))))))
 
 
 ;;;;; Drawing
 (def tile-size 16)
 
 (def tile-colors
-  {:wall {true [160 160 160] false [40 40 40]}
-   :floor {true [60 60 60] false [30 30 30]}
+  {:wall {true [160 160 160] false [30 30 30]}
+   :floor {true [60 60 60] false [0 0 0]}
    :player [255 255 0]
    :zombie [127 255 127]})
 
@@ -51,17 +53,12 @@
       (q/text-char \# 0 0))))
 
 (defn draw-tile [tile [tx ty] [px py] state]
-  (if (game/lit? [tx ty] [px py])
-    (if (and (= tx px) (= ty py))
+   (if (and (= tx px) (= ty py))
       (put-tile tile true)
-      (if (game/is-visible? [px py] [tx ty] (:world state))
-        (do (put-tile tile true)    
-            (q/with-fill [0 0 0]
-              (q/rect tx ty 2 2)))
-        (do (put-tile tile false)
-            (q/with-fill [0 0 0]
-              (q/rect tx ty 2 2)))))
-    (put-tile tile false)))
+      (if (some #{[tx ty]} (:visibility state))
+        (put-tile tile true)   
+        (if (:discovered tile) 
+          (put-tile tile false)))))
 
 (defn draw-tiles [state]
   (let [px (get-in state [:player :posx])
@@ -90,9 +87,8 @@
           px (:posx player)
           py (:posy player)]
       (doseq [gobject (:objects state)]
-        (let [{ox :posx oy :posy} gobject
-              is-lit (game/lit? [ox oy] [px py])]
-          (if is-lit
+        (let [{ox :posx oy :posy} gobject]
+          (if (some #{[ox oy]} (:visibility state))
             (draw-gameobject gobject))))
       (q/with-fill (:player tile-colors)
         (draw-gameobject player)))))
@@ -102,12 +98,16 @@
   (q/frame-rate 30)
   (q/color-mode :rgb)
   ; setup function returns initial state.
-  ;(game/new-game field-size)
-  (game/empty-game)
+  (game/new-game field-size)
+  ;(game/empty-game)
   )
 
 (defn update-state [state]
-  state)
+  (-> state
+      (assoc-in [:visibility] (fov/get-visible-tiles 
+                                [(get-in state [:player :posx]) (get-in state [:player :posy])]
+                                (:world state)))
+      (update-in [:world] #(fov/update-discovered (:visibility state) %))))
 
 (q/defsketch roguelite
   :title "Roguelite"

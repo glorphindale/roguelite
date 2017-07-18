@@ -19,9 +19,14 @@
     + Add simple torch lighting
     + Make room gen create a nice closed dungeon
 
-16.07.2017:
+15.07.2017:
     + Attempt to add raycasting for FOV (http://www.roguebasin.com/index.php?title=Simple_and_accurate_LOS_function_for_BlitzMax ), so much bugs
     = Raycasting to nearby cells produces funky results (indexes on path)
 
-17.07.2017:
+16.07.2017:
     + Fix raycasting (result is probable, but some artifacts remain)
+    = Add exploration
+
+18.07.2017:
+    + Added exploration, tiles will become slightly visible when are seen once
+    + Refactor FOV handling, make it more functional and reduce overhead
