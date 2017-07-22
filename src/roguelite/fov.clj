@@ -2,7 +2,7 @@
   (:require [roguelite.game :as game]))
 
 ;; FOV/raycasting
-(def torch-radius 3)
+(def torch-radius 4)
 
 (defn rad-to-deg [rad]
   (-> rad (* 180) (/ Math/PI)))

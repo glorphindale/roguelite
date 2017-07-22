@@ -30,3 +30,7 @@
 18.07.2017:
     + Added exploration, tiles will become slightly visible when are seen once
     + Refactor FOV handling, make it more functional and reduce overhead
+
+22.07.2017:
+    + Add more monster types, generate one monster per room
+    + Make monsters block player's movement

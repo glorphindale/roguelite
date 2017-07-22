@@ -25,7 +25,7 @@
     (case (:key event)
       (:r) (game/new-game field-size)  ;;; Restart
       (-> state
-          (update-in [:player] #(game/move-gobject world % dir))))))
+          (update-in [:player] #(game/move-gobject state % dir))))))
 
 
 ;;;;; Drawing
@@ -35,11 +35,13 @@
   {:wall {true [160 160 160] false [30 30 30]}
    :floor {true [60 60 60] false [0 0 0]}
    :player [255 255 0]
-   :zombie [127 255 127]})
+   :zombie [127 0 0]
+   :rat [160 0 160]
+   :troll [127 255 0]})
 
 
 (defn draw-gameobject [gobject]
-  (q/with-fill ((:otype gobject) tile-colors)
+  (q/with-fill (get-in tile-colors [(:otype gobject)] [255 255 255])
     (let [nx (* tile-size (:posx gobject))
           ny (* tile-size (:posy gobject))]
       (q/text-char (:character gobject) nx ny))))
@@ -77,8 +79,7 @@
     (q/with-translation [20 20]
       (q/text (str "Player at " (get-in state [:player :posx])
                             ":" (get-in state [:player :posy])) 0 0)
-      (q/text (str "Zombie at " (get-in state [:objects 0 :posx]) ":"
-                                (get-in state [:objects 0 :posy])) 0 20)))
+      (q/text (pr-str "Monsters at " (get-in state [:objects])) 0 20)))
 
   (q/with-translation [100 100]
     (draw-tiles state)
