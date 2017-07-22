@@ -156,5 +156,6 @@
     {:player (->GameObject px py \@ :player)
      :objects (create-monsters (rest rooms))
      :world tiles
-     :rooms rooms}))
+     :rooms rooms
+     :state :start}))
 

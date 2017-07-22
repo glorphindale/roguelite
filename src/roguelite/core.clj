@@ -24,8 +24,11 @@
         world (:world state)]
     (case (:key event)
       (:r) (game/new-game field-size)  ;;; Restart
-      (-> state
-          (update-in [:player] #(game/move-gobject state % dir))))))
+      (if (= (:raw-key event) \space)
+        (assoc-in state [:state] :waiting)
+        (-> state
+            (assoc-in [:state] :walking)    
+            (update-in [:player] #(game/move-gobject state % dir)))))))
 
 
 ;;;;; Drawing
@@ -77,9 +80,15 @@
 
   (q/with-fill [255 255 0]
     (q/with-translation [20 20]
-      (q/text (str "Player at " (get-in state [:player :posx])
+      (case (:state state)
+        (:start) (q/text (str "You see a dungeon around") 0 0)
+        (:waiting) (q/text (str "You wait") 0 0)
+        (:walking) (q/text (str "You take a step") 0 0)
+        (q/text (str "You babble '" (:state state) "'") 0 0))
+        
+      #_(q/text (str "Player at " (get-in state [:player :posx])
                             ":" (get-in state [:player :posy])) 0 0)
-      (q/text (pr-str "Monsters at " (get-in state [:objects])) 0 20)))
+      #_(q/text (pr-str "Monsters at " (get-in state [:objects])) 0 20)))
 
   (q/with-translation [100 100]
     (draw-tiles state)
