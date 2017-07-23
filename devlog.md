@@ -33,4 +33,7 @@
 
 22.07.2017:
     + Add more monster types, generate one monster per room
-    + Make monsters block player's movement
+    + Make monsters block player`s movement
+
+23.07.2017
+    + Refactor code into smaller chunks

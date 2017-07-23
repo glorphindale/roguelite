@@ -43,19 +43,27 @@
    :troll [127 255 0]})
 
 
+(def otype->symb
+  {:player \@
+   :zombie \z
+   :troll \t
+   :rat \r
+   :wall \#
+   :floor \.})
+
 (defn draw-gameobject [gobject]
   (q/with-fill (get-in tile-colors [(:otype gobject)] [255 255 255])
     (let [nx (* tile-size (:posx gobject))
           ny (* tile-size (:posy gobject))]
-      (q/text-char (:character gobject) nx ny))))
+      (q/text-char (-> gobject :otype otype->symb) nx ny))))
 
 
 (defn put-tile [tile is-lit]
   (if (:passable tile)
     (q/with-fill (get-in tile-colors [:floor is-lit])
-      (q/text-char \. 0 0))
+      (q/text-char (otype->symb :floor) 4 -4))
     (q/with-fill (get-in tile-colors [:wall is-lit])
-      (q/text-char \# 0 0))))
+      (q/text-char (otype->symb :wall) 0 0))))
 
 (defn draw-tile [tile [tx ty] [px py] state]
    (if (and (= tx px) (= ty py))
@@ -93,13 +101,14 @@
   (q/with-translation [100 100]
     (draw-tiles state)
 
+    (doseq [gobject (:objects state)]
+      (let [{ox :posx oy :posy} gobject]
+        (if (some #{[ox oy]} (:visibility state))
+          (draw-gameobject gobject))))
+
     (let [player (:player state)
           px (:posx player)
           py (:posy player)]
-      (doseq [gobject (:objects state)]
-        (let [{ox :posx oy :posy} gobject]
-          (if (some #{[ox oy]} (:visibility state))
-            (draw-gameobject gobject))))
       (q/with-fill (:player tile-colors)
         (draw-gameobject player)))))
 
@@ -107,6 +116,7 @@
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
+  (q/text-size 16)
   ; setup function returns initial state.
   (game/new-game field-size)
   ;(game/empty-game)
