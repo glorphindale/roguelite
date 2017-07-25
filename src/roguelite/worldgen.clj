@@ -1,5 +1,6 @@
 (ns roguelite.worldgen
-  (:require [roguelite.entities :as ent]))
+  (:require [roguelite.entities :as ent]
+            [roguelite.components :as comps]))
 
 (defn make-room [x y width height]
   (ent/->Room x y (+ x width) (+ y height)))
@@ -56,10 +57,14 @@
         end-y (inc (min (- max-y 2) (+ start-y -1 (rand-int max-height))))]
     (ent/->Room start-x start-y end-x end-y)))
 
+(defn random-monster [cx cy]
+  (let [mtype (rand-nth [:zombie :troll :rat])] 
+    (ent/->GameObject cx cy mtype {:self-components [(comps/howler)]
+                                   :world-components [(comps/roamer)]})))
+
 (defn place-monster [room]
-  (let [[cx cy] (room-center room)
-        mtype (rand-nth [:zombie :troll :rat])]
-    (ent/->GameObject cx cy mtype [])))
+  (let [[cx cy] (room-center room)]
+    (random-monster cx cy)))
 
 (defn create-monsters [rooms]
   (map place-monster rooms))

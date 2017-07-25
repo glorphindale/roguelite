@@ -37,3 +37,7 @@
 
 23.07.2017
     + Refactor code into smaller chunks
+
+25.07.2017
+    + Add a crude component system
+        * monsters now yell and roam around (sometimes occupying a same space)

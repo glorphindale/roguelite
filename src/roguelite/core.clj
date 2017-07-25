@@ -1,7 +1,7 @@
 (ns roguelite.core
   (:require [quil.core :as q]
             [quil.middleware :as m]
-            [roguelite.fov :as fov] 
+            [roguelite.fov :as fov]
             [roguelite.game :as game])
   (:import [java.awt.event KeyEvent]))
 
@@ -26,9 +26,7 @@
       (:r) (game/new-game field-size)  ;;; Restart
       (if (= (:raw-key event) \space)
         (assoc-in state [:state] :waiting)
-        (-> state
-            (assoc-in [:state] :walking)    
-            (update-in [:player] #(game/move-gobject state % dir)))))))
+        (game/one-step state dir)))))
 
 
 ;;;;; Drawing
@@ -69,8 +67,8 @@
    (if (and (= tx px) (= ty py))
       (put-tile tile true)
       (if (some #{[tx ty]} (:visibility state))
-        (put-tile tile true)   
-        (if (:discovered tile) 
+        (put-tile tile true)
+        (if (:discovered tile)
           (put-tile tile false)))))
 
 (defn draw-tiles [state]
@@ -93,10 +91,8 @@
         (:waiting) (q/text (str "You wait") 0 0)
         (:walking) (q/text (str "You take a step") 0 0)
         (q/text (str "You babble '" (:state state) "'") 0 0))
-        
-      #_(q/text (str "Player at " (get-in state [:player :posx])
-                            ":" (get-in state [:player :posy])) 0 0)
-      #_(q/text (pr-str "Monsters at " (get-in state [:objects])) 0 20)))
+      (let [messages (filter (complement nil?) (map first (:messages state)))]
+        (q/text (str (clojure.string/join "\n" messages)) 0 25))))
 
   (q/with-translation [100 100]
     (draw-tiles state)
@@ -124,7 +120,7 @@
 
 (defn update-state [state]
   (-> state
-      (assoc-in [:visibility] (fov/get-visible-tiles 
+      (assoc-in [:visibility] (fov/get-visible-tiles
                                 [(get-in state [:player :posx]) (get-in state [:player :posy])]
                                 (:world state)))
       (update-in [:world] #(fov/update-discovered (:visibility state) %))))
