@@ -58,8 +58,9 @@
     (ent/->Room start-x start-y end-x end-y)))
 
 (defn random-monster [cx cy]
-  (let [mtype (rand-nth [:zombie :troll :rat])] 
+  (let [mtype (rand-nth [:zombie :troll :rat])]
     (ent/->GameObject cx cy mtype {:self-components [(comps/howler)]
+                                   :fighter-components [(comps/fighter)]
                                    :world-components [(comps/roamer)]})))
 
 (defn place-monster [room]
@@ -68,6 +69,10 @@
 
 (defn create-monsters [rooms]
   (map place-monster rooms))
+
+(defn create-player [room]
+  (let [[px py] (room-center room)]
+    (ent/->GameObject px py :player [{:fighter-components [(comps/fighter)]}])) )
 
 ;; World gen
 
@@ -107,6 +112,8 @@
        :rooms rooms})))
 
 (defn empty-world []
-  (let [full-map (make-map [7 7])
-        with-room (carve-room full-map (make-room 2 2 4 4))]
-    with-room))
+  (let [full-map (make-map [10 10])
+        rooms [(make-room 2 2 3 2) (make-room 4 4 3 3)]
+        with-room (reduce #(carve-room %1 %2) full-map rooms)]
+    {:tiles with-room
+     :rooms rooms}))

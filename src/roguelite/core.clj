@@ -90,8 +90,9 @@
         (:start) (q/text (str "You see a dungeon around") 0 0)
         (:waiting) (q/text (str "You wait") 0 0)
         (:walking) (q/text (str "You take a step") 0 0)
+        (:attacking) (q/text (str "You attack!") 0 0)
         (q/text (str "You babble '" (:state state) "'") 0 0))
-      (let [messages (filter (complement nil?) (map first (:messages state)))]
+      (let [messages (filter (complement nil?) (flatten (:messages state)))]
         (q/text (str (clojure.string/join "\n" messages)) 0 25))))
 
   (q/with-translation [100 100]
@@ -114,8 +115,8 @@
   (q/color-mode :rgb)
   (q/text-size 16)
   ; setup function returns initial state.
-  (game/new-game field-size)
-  ;(game/empty-game)
+  ;(game/new-game field-size)
+  (game/simple-game)
   )
 
 (defn update-state [state]

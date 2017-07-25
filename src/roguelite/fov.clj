@@ -1,5 +1,5 @@
 (ns roguelite.fov
-  (:require [roguelite.game :as game]))
+  (:require [roguelite.movement :as move]))
 
 ;; FOV/raycasting
 (def torch-radius 4)
@@ -42,8 +42,8 @@
           (recur (rest iseq) (if blocks (+ walls-found 1) walls-found) visible))))))
 
 (defn get-visible-tiles [[px py] tiles]
-  (filter #(and (lit? [px py] %) 
-                (is-visible? [px py] % tiles)) (game/gen-tile-coords tiles)))
+  (filter #(and (lit? [px py] %)
+                (is-visible? [px py] % tiles)) (move/gen-tile-coords tiles)))
 
 (defn update-discovered [visible-tiles world-tiles]
   (letfn [(updater-f [tiles [x y]]

@@ -1,39 +1,7 @@
 (ns roguelite.game
   (:require [roguelite.entities :as ent]
+            [roguelite.movement :as move]
             [roguelite.worldgen :as wgen]))
-
-;; Movement
-
-(defn gen-tile-coords [tiles]
-  (for [[x col] tiles
-        [y tile] col]
-    [x y]))
-
-(defn objects-at-pos [objects [tx ty]]
-  (filter #(and (= tx (:posx %)) (= ty (:posy %))) objects))
-
-(defn get-tile [world-map [mx my]]
-  (get-in world-map [mx my]))
-
-(defn new-position [gobject [dx dy]]
-  [(+ (:posx gobject) dx) (+ (:posy gobject) dy)])
-
-(defn move-possible? [state gobject dir]
-  (let [new-pos (new-position gobject dir)
-        passable (:passable (get-tile (:world state) new-pos))
-        is-free (empty? (objects-at-pos (:objects state) new-pos))]
-    (and passable is-free)))
-
-(defn move-gobject [state gobject dir]
-  (let [[dx dy] dir
-        [nx ny] (new-position gobject dir)
-        player-occupied (and (= nx (-> state :player :posx)) (= ny (-> state :player :posy)))
-        passable (move-possible? state gobject dir)]
-    (if (and passable (not player-occupied)) 
-      (-> gobject
-          (assoc-in [:posx] nx)
-          (assoc-in [:posy] ny))
-      gobject)))
 
 ;; High-level logic
 (defn- apply-single-component [[gobject messages] component]
@@ -45,12 +13,13 @@
 
 (defn single-obj-components [state]
   (let [gobjs (:objects state)
+        prev-messages (:messages state)
         updated (map #(apply-single-components %1) gobjs)
         newgobjs (map first updated)
         messages (map second updated)]
     (-> state
         (assoc-in [:objects] newgobjs)
-        (assoc-in [:messages] messages))))
+        (assoc-in [:messages] (concat prev-messages messages)))))
 
 (defn- apply-world-components [gobject state]
   (reduce #(%2 %1 state) gobject (-> gobject :components :world-components)))
@@ -61,26 +30,38 @@
     (-> state
         (assoc-in [:objects] newgobjs))))
 
+;; What to do?
+(defn fight-components [state attacker defender]
+  (let [component (-> attcker :components :fighter-components first)]
+    (component attacker defender)))
+
 (defn one-step [state dir]
-  (-> state
-      (assoc-in [:state] :walking)
-      (update-in [:player] #(move-gobject state % dir))
-      (single-obj-components)  
-      (world-components)))
+  (let [tobjects (move/objects-at-pos (:objects state) (move/new-position (:player state) dir))]
+    (if (seq tobjects)
+      (-> state
+          (assoc-in [:state] :attacking)
+          (assoc-in [:messages] [(str (ent/pretty-name (first tobjects)) " seems unamazed.")]))
+      (-> state
+          (assoc-in [:state] :walking)
+          (assoc-in [:messages] [(str (count tobjects))])
+          (update-in [:player] #(move/move-gobject state % dir))
+          (single-obj-components)
+          (world-components)))))
 
 
 ;; Room gen
-(defn empty-game []
-  {:world (wgen/empty-world)
-   :rooms [(wgen/make-room 1 1 3 3)]
-   :player (ent/->GameObject 2 2 :player [])
-   :objects []})
-
 (defn new-game [map-size]
-  (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)
-        [px py] (-> rooms first wgen/room-center)
-        [zx zy] (-> rooms second wgen/room-center)]
-    {:player (ent/->GameObject px py :player [])
+  (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)]
+    {:player (wgen/create-player (first rooms))
+     :objects (wgen/create-monsters (rest rooms))
+     :world tiles
+     :rooms rooms
+     :messages []
+     :state :start}))
+
+(defn simple-game []
+  (let [{:keys [rooms tiles]} (wgen/empty-world)]
+    {:player (wgen/create-player (first rooms))
      :objects (wgen/create-monsters (rest rooms))
      :world tiles
      :rooms rooms
