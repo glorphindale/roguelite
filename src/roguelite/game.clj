@@ -35,6 +35,13 @@
   (let [component (-> attcker :components :fighter-components first)]
     (component attacker defender)))
 
+(defn wait-step [state]
+    (-> state
+        (assoc-in [:state] :waiting)
+        (assoc-in [:messages] []) ;; Clear messages
+        (single-obj-components)
+        (world-components)))
+
 (defn one-step [state dir]
   (let [tobjects (move/objects-at-pos (:objects state) (move/new-position (:player state) dir))]
     (if (seq tobjects)
@@ -43,11 +50,10 @@
           (assoc-in [:messages] [(str (ent/pretty-name (first tobjects)) " seems unamazed.")]))
       (-> state
           (assoc-in [:state] :walking)
-          (assoc-in [:messages] [(str (count tobjects))])
+          (assoc-in [:messages] []) ;; Clear messages
           (update-in [:player] #(move/move-gobject state % dir))
           (single-obj-components)
           (world-components)))))
-
 
 ;; Room gen
 (defn new-game [map-size]

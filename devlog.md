@@ -41,3 +41,7 @@
 25.07.2017
     + Add a crude component system
         * monsters now yell and roam around (sometimes occupying a same space)
+
+09.08.2017
+    + Refactor visibility calculation to a proper way
+    + Make 'wait' step do proper waiting

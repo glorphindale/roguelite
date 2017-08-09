@@ -19,21 +19,33 @@
     (:d :right) [1 0]
     [0 0]))
 
+(defn refresh-visibility [state]
+  (-> state
+      (assoc-in [:visibility] (fov/get-visible-tiles
+                                [(get-in state [:player :posx]) (get-in state [:player :posy])]
+                                (:world state)))
+      (update-in [:world] #(fov/update-discovered (:visibility state) %))))
+
+(defn process-movement [state dir]
+  (-> state
+      (game/one-step dir)
+      (refresh-visibility)))
+
 (defn key-pressed [state event]
   (let [dir (event->direction event)
         world (:world state)]
     (case (:key event)
-      (:r) (game/new-game field-size)  ;;; Restart
+      (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
       (if (= (:raw-key event) \space)
-        (assoc-in state [:state] :waiting)
-        (game/one-step state dir)))))
+        (game/wait-step state)
+        (process-movement state dir)))))
 
 
 ;;;;; Drawing
 (def tile-size 16)
 
 (def tile-colors
-  {:wall {true [160 160 160] false [30 30 30]}
+  {:wall {true [160 130 0] false [30 30 30]}
    :floor {true [60 60 60] false [0 0 0]}
    :player [255 255 0]
    :zombie [127 0 0]
@@ -116,15 +128,11 @@
   (q/text-size 16)
   ; setup function returns initial state.
   ;(game/new-game field-size)
-  (game/simple-game)
+  (refresh-visibility (game/simple-game))
   )
 
 (defn update-state [state]
-  (-> state
-      (assoc-in [:visibility] (fov/get-visible-tiles
-                                [(get-in state [:player :posx]) (get-in state [:player :posy])]
-                                (:world state)))
-      (update-in [:world] #(fov/update-discovered (:visibility state) %))))
+  state)
 
 (q/defsketch roguelite
   :title "Roguelite"
