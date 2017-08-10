@@ -125,11 +125,12 @@
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
-  (q/text-size 16)
+  #_(q/text-size 16)
   ; setup function returns initial state.
   ;(game/new-game field-size)
-  (refresh-visibility (game/simple-game))
-  )
+  (let [font (q/load-font "DFBisasam16x16-16.vlw")]
+    (q/text-font font 16))
+  (refresh-visibility (game/simple-game)))
 
 (defn update-state [state]
   state)

@@ -59,20 +59,24 @@
 
 (defn random-monster [cx cy]
   (let [mtype (rand-nth [:zombie :troll :rat])]
-    (ent/->GameObject cx cy mtype {:self-components [(comps/howler)]
-                                   :fighter-components [(comps/fighter)]
-                                   :world-components [(comps/roamer)]})))
+    (ent/->GameObject cx cy mtype {:attacker {:attack 3}
+                                   :defender {:defence 1 :hp 3}
+                                   :sound :roar
+                                   :movement :roam})))
 
 (defn place-monster [room]
   (let [[cx cy] (room-center room)]
     (random-monster cx cy)))
 
 (defn create-monsters [rooms]
-  (map place-monster rooms))
+  (vec (map place-monster rooms)))
 
 (defn create-player [room]
   (let [[px py] (room-center room)]
-    (ent/->GameObject px py :player [{:fighter-components [(comps/fighter)]}])) )
+    (ent/->GameObject px py
+                      :player
+                      {:attacker {:attack 3}
+                       :defender {:defence 2 :hp 5}})))
 
 ;; World gen
 

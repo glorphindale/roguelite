@@ -1,46 +1,38 @@
 (ns roguelite.game
   (:require [roguelite.entities :as ent]
+            [roguelite.components :as comps]
             [roguelite.movement :as move]
             [roguelite.worldgen :as wgen]))
 
 ;; High-level logic
-(defn- apply-single-component [[gobject messages] component]
-  (let [[ngobject message] (component gobject)]
-    [ngobject (conj messages message)]))
 
-(defn- apply-single-components [gobject]
-  (reduce apply-single-component [gobject []] (-> gobject :components :self-components)))
+(defn sound-component [state gobject-idx]
+  (let [gobject (nth (:objects state) gobject-idx)]
+    (if-let [sound (-> gobject :components :sound)]
+      (let [[nobj msg] (comps/make-a-sound gobject)]
+        (-> state
+            (update-in [:messages] #(conj % msg))))
+      state)))
 
-(defn single-obj-components [state]
-  (let [gobjs (:objects state)
-        prev-messages (:messages state)
-        updated (map #(apply-single-components %1) gobjs)
-        newgobjs (map first updated)
-        messages (map second updated)]
-    (-> state
-        (assoc-in [:objects] newgobjs)
-        (assoc-in [:messages] (concat prev-messages messages)))))
+(defn move-component [state gobject-idx]
+  (letfn [(updater [gobj] (comps/roam state gobj))]
+    (update-in state [:objects gobject-idx] updater)))
 
-(defn- apply-world-components [gobject state]
-  (reduce #(%2 %1 state) gobject (-> gobject :components :world-components)))
+(defn process-gobject [state gobject-idx]
+  (-> state
+      (sound-component gobject-idx)
+      (move-component gobject-idx)))
 
-(defn world-components [state]
-  (let [gobjs (:objects state)
-        newgobjs (map #(apply-world-components %1 state) gobjs)]
-    (-> state
-        (assoc-in [:objects] newgobjs))))
-
-;; What to do?
-(defn fight-components [state attacker defender]
-  (let [component (-> attcker :components :fighter-components first)]
-    (component attacker defender)))
+(defn process-gobjects [state]
+  (let [idxs (-> state :objects count range)]
+    (reduce #(process-gobject %1 %2) state idxs)))
 
 (defn wait-step [state]
     (-> state
         (assoc-in [:state] :waiting)
         (assoc-in [:messages] []) ;; Clear messages
-        (single-obj-components)
-        (world-components)))
+        (process-gobjects)
+          ))
 
 (defn one-step [state dir]
   (let [tobjects (move/objects-at-pos (:objects state) (move/new-position (:player state) dir))]
@@ -52,8 +44,8 @@
           (assoc-in [:state] :walking)
           (assoc-in [:messages] []) ;; Clear messages
           (update-in [:player] #(move/move-gobject state % dir))
-          (single-obj-components)
-          (world-components)))))
+          (process-gobjects)
+          ))))
 
 ;; Room gen
 (defn new-game [map-size]

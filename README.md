@@ -4,6 +4,10 @@ Attempt to make a roguelike in Clojure by following /r/roguelikedev tutorial: ht
 
 ## Usage
 
+## Notes
+
+Uses a tileset built for Dwarf Fortress (taken from http://dwarffortresswiki.org/index.php/File:Bisasam_16x16_preview.png)
+
 ## License
 
 Copyright © 2017 FIXME

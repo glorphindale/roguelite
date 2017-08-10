@@ -45,3 +45,7 @@
 09.08.2017
     + Refactor visibility calculation to a proper way
     + Make 'wait' step do proper waiting
+
+10.08.2017
+    + Add Dwarf Fortress tileset - looks nicer
+    * Refactor old components into data-based approach
