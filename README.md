@@ -4,6 +4,12 @@ Attempt to make a roguelike in Clojure by following /r/roguelikedev tutorial: ht
 
 ## Usage
 
+> lein run
+
+Use arrow keys to move, R to start a new level.
+
+![Current look](https://github.com/glorphindale/roguelite/blob/master/docs/screenshots/state_12_08_17.png?raw=true)
+
 ## Notes
 
 Uses a tileset built for Dwarf Fortress (taken from http://dwarffortresswiki.org/index.php/File:Bisasam_16x16_preview.png)
