@@ -49,3 +49,9 @@
 10.08.2017
     + Add Dwarf Fortress tileset - looks nicer
     * Refactor old components into data-based approach
+
+11.08.2017
+    * Add simple combat allowing player to slay monsters
+    * Monsters now strike back
+    * Add simple UI for showing player stats
+    * Game over state added

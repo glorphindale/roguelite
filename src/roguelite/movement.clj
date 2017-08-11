@@ -8,7 +8,8 @@
     [x y]))
 
 (defn objects-at-pos [objects [tx ty]]
-  (filter #(and (= tx (:posx %)) (= ty (:posy %))) objects))
+  (filter #(and (= tx (:posx (second %))) (= ty (:posy (second %))))
+          (map-indexed vector objects)))
 
 (defn get-tile [world-map [mx my]]
   (get-in world-map [mx my]))

@@ -15,7 +15,10 @@
       (move/move-gobject state gobject direction))
     gobject))
 
+(defn nearby-cells [[x y]]
+  (for [dx [-1 0 1]
+        dy [-1 0 1]]
+    [(+ x dx) (+ y dy)]))
 
-(defn fighter []
-  (fn [attacker defender]
-    [attacker nil]))
+(defn is-player-nearby? [ppos mpos]
+  (seq (filter #(= %1 mpos) (nearby-cells ppos))))

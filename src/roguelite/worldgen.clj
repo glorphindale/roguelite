@@ -58,11 +58,12 @@
     (ent/->Room start-x start-y end-x end-y)))
 
 (defn random-monster [cx cy]
-  (let [mtype (rand-nth [:zombie :troll :rat])]
+  (let [mtype (rand-nth [:zombie :troll :rat])
+        behavior (rand-nth [:attack-nearby :hunt])]  ;;; roam is kinda lame
     (ent/->GameObject cx cy mtype {:attacker {:attack 3}
                                    :defender {:defence 1 :hp 3}
                                    :sound :roar
-                                   :movement :roam})))
+                                   :movement behavior})))
 
 (defn place-monster [room]
   (let [[cx cy] (room-center room)]
@@ -71,12 +72,15 @@
 (defn create-monsters [rooms]
   (vec (map place-monster rooms)))
 
-(defn create-player [room]
-  (let [[px py] (room-center room)]
-    (ent/->GameObject px py
-                      :player
-                      {:attacker {:attack 3}
-                       :defender {:defence 2 :hp 5}})))
+(defn create-player [px py]
+  (ent/->GameObject px py
+                    :player
+                    {:attacker {:attack 3}
+                     :defender {:defence 2 :hp 5}}))
+
+(defn place-player [room]
+   (let [[px py] (room-center room)]
+     (create-player px py)))
 
 ;; World gen
 

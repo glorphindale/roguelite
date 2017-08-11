@@ -8,7 +8,7 @@
 (set! *warn-on-reflection* true)
 
 (def field-size [20 20])
-(def screen-size [700 700])
+(def screen-size [1200 700])
 
 ;;; Input processing
 (defn event->direction [event]
@@ -36,9 +36,11 @@
         world (:world state)]
     (case (:key event)
       (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
-      (if (= (:raw-key event) \space)
-        (game/wait-step state)
-        (process-movement state dir)))))
+      (if (= :gameover (:state state))
+        state
+        (if (= (:raw-key event) \space)
+          (game/wait-step state)
+          (process-movement state dir))))))
 
 
 ;;;;; Drawing
@@ -96,17 +98,6 @@
   (q/stroke-weight 0)
   (q/background 0)
 
-  (q/with-fill [255 255 0]
-    (q/with-translation [20 20]
-      (case (:state state)
-        (:start) (q/text (str "You see a dungeon around") 0 0)
-        (:waiting) (q/text (str "You wait") 0 0)
-        (:walking) (q/text (str "You take a step") 0 0)
-        (:attacking) (q/text (str "You attack!") 0 0)
-        (q/text (str "You babble '" (:state state) "'") 0 0))
-      (let [messages (filter (complement nil?) (flatten (:messages state)))]
-        (q/text (str (clojure.string/join "\n" messages)) 0 25))))
-
   (q/with-translation [100 100]
     (draw-tiles state)
 
@@ -119,7 +110,26 @@
           px (:posx player)
           py (:posy player)]
       (q/with-fill (:player tile-colors)
-        (draw-gameobject player)))))
+        (draw-gameobject player))))
+
+  (q/with-translation [550 40]
+    (q/with-fill [255 255 255]
+      (q/text (str "HP: " (get-in state [:player :components :defender :hp])) 0 0)
+      (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
+      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40)
+      ))
+
+  (q/with-fill [255 255 0]
+    (q/with-translation [20 20]
+      (case (:state state)
+        (:start) (q/text (str "You see a dungeon around") 0 0)
+        (:waiting) (q/text (str "You wait") 0 0)
+        (:walking) (q/text (str "You take a step") 0 0)
+        (:attacking) (q/text (str "You attack!") 0 0)
+        (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
+        (q/text (str "You babble '" (:state state) "'") 0 0))
+      (let [messages (filter (complement nil?) (flatten (:messages state)))]
+        (q/text (str (clojure.string/join "\n" messages)) 0 25)))))
 
 ;;;;; Setup
 (defn setup []
