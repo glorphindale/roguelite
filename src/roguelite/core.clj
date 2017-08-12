@@ -8,7 +8,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def field-size [20 20])
+(def field-size [25 25])
 (def screen-size [1200 700])
 
 ;;; Input processing
@@ -128,27 +128,25 @@
     (q/with-fill [255 255 255]
       (q/text (str "HP: " (get-in state [:player :components :defender :hp])) 0 0)
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
-      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40)))
+      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40))
 
-  (q/with-fill [255 255 0]
-    (q/with-translation [20 20]
-      (case (:state state)
-        (:start) (q/text (str "You see a dungeon around") 0 0)
-        (:waiting) (q/text (str "You wait") 0 0)
-        (:walking) (q/text (str "You take a step") 0 0)
-        (:attacking) (q/text (str "You attack!") 0 0)
-        (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
-        (q/text (str "You babble '" (:state state) "'") 0 0))
-      (let [messages (filter (complement nil?) (flatten (:messages state)))]
-        (q/text (str (clojure.string/join "\n" messages)) 0 25)))))
+    (q/with-fill [255 255 0]
+      (q/with-translation [0 80]
+        (case (:state state)
+          (:start) (q/text (str "You see a dungeon around") 0 0)
+          (:waiting) (q/text (str "You wait") 0 0)
+          (:walking) (q/text (str "You take a step") 0 0)
+          (:attacking) (q/text (str "You attack!") 0 0)
+          (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
+          (q/text (str "You babble '" (:state state) "'") 0 0))
+        (let [messages (filter (complement nil?) (flatten (:messages state)))]
+          (q/text (str (clojure.string/join "\n" messages)) 0 25))))))
 
 ;;;;; Setup
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
   #_(q/text-size 16)
-  ; setup function returns initial state.
-  ;(game/new-game field-size)
   (let [font (q/load-font "DFBisasam16x16-16.vlw")]
     (q/text-font font 16))
   (refresh-visibility (game/simple-game)))

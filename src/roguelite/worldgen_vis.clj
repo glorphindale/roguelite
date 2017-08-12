@@ -4,9 +4,26 @@
             [roguelite.worldgen :as wgen])
   (:import [java.awt.event KeyEvent]))
 
+(def map-size [25 25])
+
+(defn full-map []
+  {:tiles (wgen/make-map map-size)
+   :rooms []})
+
+(defn add-room [state]
+  (let [nroom (wgen/random-room map-size wgen/room-config)
+        intersects? (filter #(wgen/intersects? % nroom) (:rooms state))]
+    (if (empty? intersects?)
+      (-> state
+          (assoc-in [:new-room] nroom)
+          (update-in [:rooms] conj nroom))
+      (assoc-in state [:new-room] nroom)
+      )))
+
 (defn key-pressed [state event]
   (case (:key event)
-    (:r) (:tiles (wgen/simple-world [15 15] wgen/room-config))
+    (:r) (full-map)
+    (:n) (add-room state)
     state))
 
 (defn update-state [state]
@@ -26,16 +43,17 @@
   (q/stroke-weight 0)
   (q/background 0)
 
-  (q/text (pr-str state) 20 20)
+  (q/text (pr-str (:new-room state)) 20 20)
   (q/with-translation [100 100]
-    (draw-tiles state)))
+    (let [tiles (reduce #(wgen/carve-room %1 %2) (:tiles state) (:rooms state))]
+      (draw-tiles tiles))))
 
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
-  (:tiles (wgen/empty-world)))
+  (full-map))
 
-(q/defsketch roguelite
+#_(q/defsketch roguelite
   :title "Worldgen example"
   :size [500 500]
   :setup setup

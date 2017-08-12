@@ -57,4 +57,7 @@
     * Game over state added
 
 12.08.2017
-    * Added 8-directional movement
+    * Add 8-directional movement
+    * Add a sketch to test worldgen
+    * Revamped worldgen to get rid of the bugs
+    * Tune UI

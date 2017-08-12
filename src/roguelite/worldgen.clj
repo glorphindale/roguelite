@@ -47,14 +47,16 @@
          (<= y11 y22)
          (>= y21 y12))))
 
-(def room-config {:max-height 7 :max-width 7 :max-rooms 15})
+(def room-config {:max-height 5 :max-width 5 :max-rooms 15})
 
-(defn random-room [[max-x max-y] {:keys [max-height max-width]}]
-  (let [start-x (inc (rand-int (dec max-x)))
-        start-y (inc (rand-int (dec max-y)))
-        ;; Try to make rooms at least 2x2
-        end-x (inc (min (- max-x 3) (+ start-x -1 (rand-int max-width))))
-        end-y (inc (min (- max-y 2) (+ start-y -1 (rand-int max-height))))]
+(defn random-room [[map-x map-y] {:keys [max-height max-width]}]
+  ;; Try to make rooms at least 2x2
+  (let [start-x (inc (rand-int (- map-x 4)))
+        start-y (inc (rand-int (- map-y 4)))
+        width (+ 2 (rand-int (- max-width 2)))
+        height (+ 2 (rand-int (- max-height 2)))
+        end-x (min (+ start-x width) (dec map-x))
+        end-y (min (+ start-y height) (dec map-y))]
     (ent/->Room start-x start-y end-x end-y)))
 
 (defn random-monster [cx cy]
@@ -89,7 +91,7 @@
 
 (defn gen-rooms [map-size room-config]
   (let [max-rooms (:max-rooms room-config)]
-    (loop [iters (* max-rooms 2)
+    (loop [iters (* max-rooms 3)
            result []]
       (if (pos? iters)
         (let [new-room (random-room map-size room-config)
