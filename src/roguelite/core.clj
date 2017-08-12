@@ -17,7 +17,11 @@
     (:s :down) [0 1]
     (:a :left) [-1 0]
     (:d :right) [1 0]
-    [0 0]))
+    (case (long (:key-code event))
+      (36) [-1 -1] (38) [0 -1] (33) [1 -1]
+      (37) [-1 0]              (39) [1 0]
+      (35) [-1 1]  (40) [0 1]  (34) [1 1]
+      [0 0])))
 
 (defn refresh-visibility [state]
   (-> state

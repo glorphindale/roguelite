@@ -14,6 +14,12 @@ Use arrow keys to move, R to start a new level.
 
 Uses a tileset built for Dwarf Fortress (taken from http://dwarffortresswiki.org/index.php/File:Bisasam_16x16_preview.png)
 
+## TODO
+
+* Monsters should leave corpses
+* Show walls with different characters 
+
+
 ## License
 
 Copyright © 2017 FIXME

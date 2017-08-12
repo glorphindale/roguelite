@@ -55,3 +55,6 @@
     * Monsters now strike back
     * Add simple UI for showing player stats
     * Game over state added
+
+12.08.2017
+    * Added 8-directional movement
