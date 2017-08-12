@@ -10,10 +10,8 @@
       [gobject nil])))
 
 (defn roam [state gobject]
-  (if (= :roam (-> gobject :components :movement))
-    (let [direction (rand-nth [[0 1] [1 0] [0 -1] [-1 0]])]
-      (move/move-gobject state gobject direction))
-    gobject))
+  (let [direction (rand-nth [[0 1] [1 0] [0 -1] [-1 0]])]
+    (move/move-gobject state gobject direction)))
 
 (defn nearby-cells [[x y]]
   (for [dx [-1 0 1]
