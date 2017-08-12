@@ -2,6 +2,7 @@
   (:require [quil.core :as q]
             [quil.middleware :as m]
             [roguelite.fov :as fov]
+            [roguelite.movement :as move]
             [roguelite.game :as game])
   (:import [java.awt.event KeyEvent]))
 
@@ -24,11 +25,15 @@
       [0 0])))
 
 (defn refresh-visibility [state]
-  (-> state
-      (assoc-in [:visibility] (fov/get-visible-tiles
-                                [(get-in state [:player :posx]) (get-in state [:player :posy])]
-                                (:world state)))
-      (update-in [:world] #(fov/update-discovered (:visibility state) %))))
+  (if (:no-fog state)
+    (-> state
+        (assoc-in [:visibility] (move/gen-tile-coords (:world state)))
+        (update-in [:world] #(fov/update-discovered (:visibility state) %)))
+    (-> state
+        (assoc-in [:visibility] (fov/get-visible-tiles
+                                  [(get-in state [:player :posx]) (get-in state [:player :posy])]
+                                  (:world state)))
+        (update-in [:world] #(fov/update-discovered (:visibility state) %)))))
 
 (defn process-movement [state dir]
   (-> state
@@ -39,6 +44,9 @@
   (let [dir (event->direction event)
         world (:world state)]
     (case (:key event)
+      ;;; Cheat codes for debugging
+      (:O) (assoc-in state [:no-fog] true)
+      (:o) (assoc-in state [:no-fog] false)
       (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
       (if (= :gameover (:state state))
         state
@@ -120,8 +128,7 @@
     (q/with-fill [255 255 255]
       (q/text (str "HP: " (get-in state [:player :components :defender :hp])) 0 0)
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
-      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40)
-      ))
+      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40)))
 
   (q/with-fill [255 255 0]
     (q/with-translation [20 20]

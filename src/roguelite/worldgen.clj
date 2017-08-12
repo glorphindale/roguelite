@@ -59,7 +59,7 @@
 
 (defn random-monster [cx cy]
   (let [mtype (rand-nth [:zombie :troll :rat])
-        behavior (rand-nth [:attack-nearby :hunt])]  ;;; roam is kinda lame
+        behavior (rand-nth [:attack-nearby :roam])]  ;;; roam is kinda lame
     (ent/->GameObject cx cy mtype {:attacker {:attack 3}
                                    :defender {:defence 1 :hp 3}
                                    :sound :roar

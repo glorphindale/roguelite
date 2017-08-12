@@ -17,7 +17,7 @@ Uses a tileset built for Dwarf Fortress (taken from http://dwarffortresswiki.org
 ## TODO
 
 * Monsters should leave corpses
-* Show walls with different characters 
+* Show walls with different characters (Impossible with current tileset, and probably with Quil - need proper tile drawing)
 
 
 ## License
