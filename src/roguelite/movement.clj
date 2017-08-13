@@ -8,8 +8,14 @@
     [x y]))
 
 (defn objects-at-pos [objects [tx ty]]
-  (filter #(and (= tx (:posx (second %))) (= ty (:posy (second %))))
+  "Returns a list of objects at position, indexed"
+  (filter #(and (= tx (:posx (second %)))
+                (= ty (:posy (second %))))
           (map-indexed vector objects)))
+
+(defn get-impassable [objects]
+  (letfn [(passable? [gobj] (get-in (second gobj) [:components :passable] false))]
+    (filter (complement passable?) objects)))
 
 (defn get-tile [world-map [mx my]]
   (get-in world-map [mx my]))
@@ -20,7 +26,7 @@
 (defn move-possible? [state gobject dir]
   (let [new-pos (new-position gobject dir)
         passable (:passable (get-tile (:world state) new-pos))
-        is-free (empty? (objects-at-pos (:objects state) new-pos))]
+        is-free (empty? (get-impassable (objects-at-pos (:objects state) new-pos)))]
     (and passable is-free)))
 
 (defn move-gobject [state gobject dir]

@@ -64,6 +64,7 @@
    :player [255 255 0]
    :zombie [127 0 0]
    :rat [160 0 160]
+   :corpse [200 200 200]
    :troll [127 255 0]})
 
 
@@ -72,6 +73,7 @@
    :zombie \z
    :troll \t
    :rat \r
+   :corpse \,
    :wall \#
    :floor \.})
 
@@ -146,7 +148,6 @@
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
-  #_(q/text-size 16)
   (let [font (q/load-font "DFBisasam16x16-16.vlw")]
     (q/text-font font 16))
   (refresh-visibility (game/simple-game)))

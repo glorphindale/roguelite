@@ -18,7 +18,7 @@
          (assoc-in defender [:components :defender :hp] nhp)
          (str (ent/pretty-name attacker) " hits " (ent/pretty-name defender) " for " damage)]
         [attacker
-         nil
+         (ent/->GameObject (:posx defender) (:posy defender) :corpse {:passable true})
          (str (ent/pretty-name attacker) " slays " (ent/pretty-name defender) "!")]))))
 
 (defn sound-component [state gobject-idx]
@@ -91,8 +91,13 @@
         (assoc-in [:messages] []) ;; Clear messages
         (process-gobjects)))
 
+(defn objs-to-attack [gobjects target]
+  (let [objs-at-pos (move/objects-at-pos gobjects target)]
+    (filter #(get-in (second %) [:components :defender]) objs-at-pos)))
+
 (defn one-step [state dir]
-  (let [tobjects (move/objects-at-pos (:objects state) (move/new-position (:player state) dir))]
+  (let [tobjects (objs-to-attack (:objects state)
+                                 (move/new-position (:player state) dir))]
     (if (seq tobjects)
       (-> state
           (assoc-in [:state] :attacking)
@@ -101,7 +106,7 @@
           (process-gobjects))
       (-> state
           (assoc-in [:state] :walking)
-          (assoc-in [:messages] []) ;; Clear messages
+          (assoc-in [:messages] [(pr-str tobjects)]) ;; Clear messages
           (update-in [:player] #(move/move-gobject state % dir))
           (process-gobjects)
           ))))

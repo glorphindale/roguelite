@@ -78,7 +78,7 @@
   (ent/->GameObject px py
                     :player
                     {:attacker {:attack 3}
-                     :defender {:defence 2 :hp 5}}))
+                     :defender {:defence 2 :hp 10}}))
 
 (defn place-player [room]
    (let [[px py] (room-center room)]

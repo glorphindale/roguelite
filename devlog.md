@@ -61,3 +61,6 @@
     * Add a sketch to test worldgen
     * Revamped worldgen to get rid of the bugs
     * Tune UI
+
+13.08.2017
+    * Add corpses and objects that can be walked over
