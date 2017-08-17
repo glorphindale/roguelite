@@ -20,3 +20,12 @@
 
 (defn is-player-nearby? [ppos mpos]
   (seq (filter #(= %1 mpos) (nearby-cells ppos))))
+
+(defn describe-defender [gobject]
+  (when-let [defender (get-in gobject [:components :defender])]
+    (let [ratio (/ (:hp defender) (:max-hp defender))]
+      (cond
+       (< ratio 0.3) "It is severly injured."
+       (< ratio 0.7) "It is injured."
+       (< ratio 1) "It is slightly injured."
+       (>= ratio 1) "It is uninjured."))))

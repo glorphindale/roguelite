@@ -68,3 +68,4 @@
 17.08.2017
     * Tune UI to make it more pleasant
     * Fix NullPointer bug when being slain
+    * Add mouselook

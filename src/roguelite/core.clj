@@ -1,6 +1,8 @@
 (ns roguelite.core
   (:require [quil.core :as q]
             [quil.middleware :as m]
+            [roguelite.entities :as ent]
+            [roguelite.components :as comps]
             [roguelite.fov :as fov]
             [roguelite.movement :as move]
             [roguelite.game :as game])
@@ -116,11 +118,22 @@
       (q/rect 50 -18 border 20 3)) 
     (q/text (str "HP: " hp "/" max-hp) 0 0)))
 
+(def field-start [100 100])
+
+(defn mouse-to-coords [mx my]
+  (let [[startx starty] field-start
+        [maxx maxy] field-size
+        px (int (/ (- mx startx) tile-size))
+        py (int (/ (+ tile-size (- my starty)) tile-size))]
+    (if (and (>= px 0) (<= px maxx) (>= py 0) (<= py maxy))
+      [px py]
+      nil)))
+
 (defn draw-state [state]
   (q/stroke-weight 0)
   (q/background 0)
 
-  (q/with-translation [100 100]
+  (q/with-translation field-start
     (draw-tiles state)
 
     (doseq [gobject (:objects state)]
@@ -133,6 +146,17 @@
           py (:posy player)]
       (q/with-fill (:player tile-colors)
         (draw-gameobject player))))
+
+  ;;; Mouse look
+  (q/with-translation [(first field-start) 30]
+    (when-let [coords (mouse-to-coords (q/mouse-x) (q/mouse-y))]
+      (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
+            tobj (first (map second enumerated-tobjs))]
+        (if tobj
+          (do
+            (if (get-in tobj [:components :defender])
+              (q/text (str (comps/describe-defender tobj)) 30 50))
+            (q/text (str "There is a " (ent/pretty-name tobj)) 30 30))))))
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]
