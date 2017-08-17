@@ -62,8 +62,8 @@
 (defn random-monster [cx cy]
   (let [mtype (rand-nth [:zombie :troll :rat])
         behavior (rand-nth [:attack-nearby :roam])]  ;;; roam is kinda lame
-    (ent/->GameObject cx cy mtype {:attacker {:attack 3}
-                                   :defender {:defence 1 :hp 3}
+    (ent/->GameObject cx cy mtype {:attacker {:attack (+ 1 (rand-int 2))}
+                                   :defender {:defence 1 :max-hp 3 :hp 3}
                                    :sound :roar
                                    :movement behavior})))
 
@@ -78,7 +78,7 @@
   (ent/->GameObject px py
                     :player
                     {:attacker {:attack 3}
-                     :defender {:defence 2 :hp 10}}))
+                     :defender {:defence 1 :max-hp 10 :hp 10}}))
 
 (defn place-player [room]
    (let [[px py] (room-center room)]

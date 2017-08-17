@@ -8,7 +8,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def field-size [25 25])
+(def field-size [35 35])
 (def screen-size [1200 700])
 
 ;;; Input processing
@@ -59,7 +59,7 @@
 (def tile-size 16)
 
 (def tile-colors
-  {:wall {true [160 130 0] false [30 30 30]}
+  {:wall {true [80 80 150] false [30 30 30]}
    :floor {true [60 60 60] false [0 0 0]}
    :player [255 255 0]
    :zombie [127 0 0]
@@ -107,6 +107,14 @@
         (q/with-translation [(* tile-size x) (* tile-size y)]
           (draw-tile tile [x y] [px py] state))))))
 
+(defn- draw-healthbar [player]
+  (let [hp (get-in player [:components :defender :hp])
+        max-hp (get-in player [:components :defender :max-hp])
+        ratio (/ hp max-hp)
+        border (* 110 ratio)]
+    (q/with-fill [200 0 0]
+      (q/rect 50 -18 border 20 3)) 
+    (q/text (str "HP: " hp "/" max-hp) 0 0)))
 
 (defn draw-state [state]
   (q/stroke-weight 0)
@@ -126,9 +134,9 @@
       (q/with-fill (:player tile-colors)
         (draw-gameobject player))))
 
-  (q/with-translation [550 40]
+  (q/with-translation [720 40]
     (q/with-fill [255 255 255]
-      (q/text (str "HP: " (get-in state [:player :components :defender :hp])) 0 0)
+      (draw-healthbar (:player state))
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
       (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40))
 

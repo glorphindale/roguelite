@@ -64,3 +64,7 @@
 
 13.08.2017
     * Add corpses and objects that can be walked over
+
+17.08.2017
+    * Tune UI to make it more pleasant
+    * Fix NullPointer bug when being slain

@@ -46,13 +46,13 @@
       (let [attacker (get-in state [:objects gobject-idx])
             defender (get-in state [:player])
             [nattacker ndefender message] (combat-round attacker defender)] 
-        (if ndefender
-          (-> state
-              (assoc-in [:player] ndefender)
-              (update-in [:messages] conj message))  
+        (if (= (:otype ndefender) :corpse)
           (-> state
               (update-in [:messages] conj message)   
-              (assoc-in [:state] :gameover))))
+              (assoc-in [:state] :gameover))  
+          (-> state
+              (assoc-in [:player] ndefender)
+              (update-in [:messages] conj message))))
       (letfn [(updater [gobj] (comps/roam state gobj))]
         (update-in state [:objects gobject-idx] updater)))
     ))
@@ -106,7 +106,7 @@
           (process-gobjects))
       (-> state
           (assoc-in [:state] :walking)
-          (assoc-in [:messages] [(pr-str tobjects)]) ;; Clear messages
+          (assoc-in [:messages] []) ;; Clear messages
           (update-in [:player] #(move/move-gobject state % dir))
           (process-gobjects)
           ))))

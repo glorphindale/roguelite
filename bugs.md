@@ -2,5 +2,10 @@ Worldgen
 
 Movement:
 
+FOV:
+    * It is possible to see monsters through walls
+
 Combat:
-    Pressing keys after being slain throws NullPointer exceptions in combat-round
+
+UI:
+    * long messages are not wrapped
