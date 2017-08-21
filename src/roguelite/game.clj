@@ -66,6 +66,17 @@
           (process-gobjects)
           ))))
 
+(defn use-item [state key-pressed]
+  (let [idx (Integer/parseInt (name key-pressed)) 
+        item (get-in state [:player :components :inventory idx])]
+    (case item
+      (:health-potion) (-> state
+                           (assoc-in [:messages] ["You chug a potion."])
+                           (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))
+                           ;;; Delete potion from the inventory
+                           )
+      (update-in state [:messages] conj (str "IDX " item)))))
+
 ;; Game gen
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)]

@@ -77,7 +77,8 @@
 (defn create-player [px py]
   (ent/->GameObject px py
                     :player
-                    {:attacker {:attack 3}
+                    {:inventory [:health-potion :dagger]
+                     :attacker {:attack 3}
                      :defender {:defence 1 :max-hp 10 :hp 10}}))
 
 (defn place-player [room]

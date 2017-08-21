@@ -45,13 +45,17 @@
 (defn key-pressed [state event]
   (let [dir (event->direction event)
         world (:world state)]
-    (case (:key event)
-      ;;; Cheat codes for debugging
-      (:O) (assoc-in state [:no-fog] true)
-      (:o) (assoc-in state [:no-fog] false)
-      (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
-      (if (= :gameover (:state state))
-        state
+    (case (:state state)
+      (:gameover) state
+      (:use-mode) (-> state
+                      (game/use-item (:key event))
+                      (assoc-in [:state] :used-item)) 
+      (case (:key event)
+        ;;; Cheat codes for debugging
+        (:O) (assoc-in state [:no-fog] true)
+        (:o) (assoc-in state [:no-fog] false)
+        (:u) (assoc-in state [:state] :use-mode)
+        (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
         (if (= (:raw-key event) \space)
           (game/wait-step state)
           (process-movement state dir))))))
@@ -147,6 +151,12 @@
       (q/with-fill (:player tile-colors)
         (draw-gameobject player))))
 
+  ;;; Inventory
+  (q/with-translation [720 400]
+    (let [inventory (clojure.string/join "\n" (map-indexed vector (get-in state [:player :components :inventory])))]
+      (q/text "Inventory" 0 0)
+      (q/text inventory 10 20)))
+
   ;;; Mouse look
   (q/with-translation [(first field-start) 30]
     (when-let [coords (mouse-to-coords (q/mouse-x) (q/mouse-y))]
@@ -169,12 +179,14 @@
         (case (:state state)
           (:start) (q/text (str "You see a dungeon around") 0 0)
           (:waiting) (q/text (str "You wait") 0 0)
+          (:use-mode) (q/text (str "Select an item to use 1-9") 0 0)
           (:walking) (q/text (str "You take a step") 0 0)
           (:attacking) (q/text (str "You attack!") 0 0)
           (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
-          (q/text (str "You babble '" (:state state) "'") 0 0))
+          (q/text (str "Current mode " (:state state)) 0 0))
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
-          (q/text (str (clojure.string/join "\n" messages)) 0 25))))))
+          (q/text (str (clojure.string/join "\n" messages)) 0 25)))))
+  )
 
 ;;;;; Setup
 (defn setup []

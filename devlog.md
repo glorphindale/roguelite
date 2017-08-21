@@ -72,3 +72,4 @@
 
 21.08.2017
     * Refactored components and moved to a proper file
+    * Add primitive inventory with potion chugging
