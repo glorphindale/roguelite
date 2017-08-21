@@ -12,7 +12,7 @@
                        (get-in defender [:components :defender :defence])))
         nhp (- (get-in defender [:components :defender :hp]) damage)]
     (if (= damage 0)
-      [attacker defender (str (ent/pretty-name defender) " seems unamazed.")]
+      [attacker defender (str (ent/pretty-name defender) " is unamazed by strike.")]
       (if (> nhp 0)
         [attacker
          (assoc-in defender [:components :defender :hp] nhp)
@@ -21,61 +21,20 @@
          (ent/->GameObject (:posx defender) (:posy defender) :corpse {:passable true})
          (str (ent/pretty-name attacker) " slays " (ent/pretty-name defender) "!")]))))
 
-(defn sound-component [state gobject-idx]
-  (let [gobject (nth (:objects state) gobject-idx)]
-    (if-let [sound (-> gobject :components :sound)]
-      (let [[nobj msg] (comps/make-a-sound gobject)]
-        (-> state
-            (update-in [:messages] #(conj % msg))))
-      state)))
-
-(defn roam [state gobject-idx]
-  (letfn [(updater [gobj] (comps/roam state gobj))]
-    (update-in state [:objects gobject-idx] updater)))
-
-(defn hunt [state gobject-idx]
-  state
-  )
-
-(defn attack-nearby [state gobject-idx]
-  (let [px (get-in state [:player :posx])
-        py (get-in state [:player :posy])
-        mx (get-in state [:objects gobject-idx :posx])
-        my (get-in state [:objects gobject-idx :posy])]
-    (if (comps/is-player-nearby? [px py] [mx my])
-      (let [attacker (get-in state [:objects gobject-idx])
-            defender (get-in state [:player])
-            [nattacker ndefender message] (combat-round attacker defender)] 
-        (if (= (:otype ndefender) :corpse)
-          (-> state
-              (update-in [:messages] conj message)   
-              (assoc-in [:state] :gameover))  
-          (-> state
-              (assoc-in [:player] ndefender)
-              (update-in [:messages] conj message))))
-      (letfn [(updater [gobj] (comps/roam state gobj))]
-        (update-in state [:objects gobject-idx] updater)))
-    ))
-
-(defn move-component [state gobject-idx]
-  (let [gobject (get-in state [:objects gobject-idx])
-        movement (get-in gobject [:components :movement])]
-    (if (= :roam movement)
-      (roam state gobject-idx)
-      (if (= :attack-nearby movement)
-        (attack-nearby state gobject-idx)
-        state
-        ))))
-
 (defn process-gobject [state gobject-idx]
   (-> state
-      (sound-component gobject-idx)
-      (move-component gobject-idx)))
+      (comps/sound-component gobject-idx)
+      (comps/move-component gobject-idx combat-round)))
 
 (defn process-gobjects [state]
   (let [idxs (-> state :objects count range)]
     (reduce #(process-gobject %1 %2) state idxs)))
 
+(defn objs-to-attack [gobjects target]
+  (let [objs-at-pos (move/objects-at-pos gobjects target)]
+    (filter #(get-in (second %) [:components :defender]) objs-at-pos)))
+
+;;; Player actions
 (defn attack [state gobject-idx]
   (let [attacker (:player state)
         defender (get-in state [:objects gobject-idx])
@@ -90,10 +49,6 @@
         (assoc-in [:state] :waiting)
         (assoc-in [:messages] []) ;; Clear messages
         (process-gobjects)))
-
-(defn objs-to-attack [gobjects target]
-  (let [objs-at-pos (move/objects-at-pos gobjects target)]
-    (filter #(get-in (second %) [:components :defender]) objs-at-pos)))
 
 (defn one-step [state dir]
   (let [tobjects (objs-to-attack (:objects state)
@@ -111,7 +66,7 @@
           (process-gobjects)
           ))))
 
-;; Room gen
+;; Game gen
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)]
     {:player (wgen/place-player (first rooms))

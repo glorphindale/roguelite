@@ -69,3 +69,6 @@
     * Tune UI to make it more pleasant
     * Fix NullPointer bug when being slain
     * Add mouselook
+
+21.08.2017
+    * Refactored components and moved to a proper file

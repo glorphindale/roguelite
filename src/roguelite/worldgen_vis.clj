@@ -1,4 +1,4 @@
-(ns roguelite.core
+(ns roguelite.worldgen-vis
   (:require [quil.core :as q]
             [quil.middleware :as m]
             [roguelite.worldgen :as wgen])
