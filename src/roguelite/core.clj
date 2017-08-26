@@ -125,7 +125,7 @@
       (q/rect 50 -18 border 20 3)) 
     (q/text (str "HP: " hp "/" max-hp) 0 0)))
 
-(def field-start [100 100])
+(def field-start [100 80])
 
 (defn mouse-to-coords [mx my]
   (let [[startx starty] field-start
@@ -154,14 +154,19 @@
       (q/with-fill (:player tile-colors)
         (draw-gameobject player))))
 
+  (q/with-translation [100 650]
+    (q/text "a/w/s/d/arrows to move and attack" 0 0) 
+    (q/text "'u' to use an item " 0 20) 
+    (q/text "'p' to pickup an item " 0 40))
+
   ;;; Inventory
-  (q/with-translation [720 400]
-    (let [inventory (clojure.string/join "\n" (map-indexed vector (get-in state [:player :components :inventory])))]
+  (q/with-translation [720 460]
+    (let [inventory (clojure.string/join "\n" (map #(str (first %) (second %)) (map-indexed vector (get-in state [:player :components :inventory]))))]
       (q/text "Inventory" 0 0)
       (q/text inventory 10 20)))
 
   ;;; Mouse look
-  (q/with-translation [(first field-start) 30]
+  (q/with-translation [(first field-start) 10]
     (when-let [coords (mouse-to-coords (q/mouse-x) (q/mouse-y))]
       (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
             tobj (first (map second enumerated-tobjs))]
@@ -177,19 +182,20 @@
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
       (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40))
 
-    (q/with-translation [0 80]
+    (q/with-translation [0 70]
       (q/with-fill [255 255 255]
         (case (:state state)
           (:start) (q/text (str "You see a dungeon around") 0 0)
           (:waiting) (q/text (str "You wait") 0 0)
           (:use-mode) (q/text (str "Select an item to use 1-9") 0 0)
+          (:used-item) (q/text (str "") 0 0)
           (:walking) (q/text (str "You take a step") 0 0)
           (:attacking) (q/text (str "You attack!") 0 0)
           (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
           (q/text (str "Current mode " (:state state)) 0 0)))
       (q/with-fill [255 255 0]
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
-          (q/text (str (clojure.string/join "\n" (take-last 15 messages))) 0 25)))))
+          (q/text (str (clojure.string/join "\n" (take-last 20 messages))) 0 25)))))
   )
 
 ;;;;; Setup

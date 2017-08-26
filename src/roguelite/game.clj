@@ -75,7 +75,7 @@
                            (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))
                            (update-in [:player :components :inventory] remove-nth idx)
                            )
-      (update-in state [:messages] conj (str "Don't know what to do with " item)))))
+      (update-in state [:messages] conj (str "Use " item "? How?")))))
 
 (defn pickup [state]
   (let [px (-> state :player :posx)
