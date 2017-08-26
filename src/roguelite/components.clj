@@ -81,7 +81,7 @@
     (if-let [sound (-> gobject :components :sound)]
       (let [[nobj msg] (make-a-sound gobject)]
         (-> state
-            (update-in [:messages] #(conj % msg))))
+            (update-in [:messages] conj msg)))
       state)))
 
 (defn move-component [state gobject-idx combat-func]
