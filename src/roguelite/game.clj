@@ -69,26 +69,34 @@
 (defn use-item [state key-pressed]
   (let [idx (Integer/parseInt (name key-pressed)) 
         item (get-in state [:player :components :inventory idx])]
-    (case item
+    (case (:itype item)
       (:health-potion) (-> state
-                           (update-in [:messages] conj "You chug a potion.")
-                           (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))
-                           (update-in [:player :components :inventory] remove-nth idx)
-                           )
-      (update-in state [:messages] conj (str "Use " item "? How?")))))
+                  (update-in [:messages] conj "You chug a health potion.")
+                  (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))
+                  (update-in [:player :components :inventory] remove-nth idx))
+      (:attack-potion) (-> state
+                  (update-in [:messages] conj "You drink, you strong.")
+                  (update-in [:player :components :attacker :attack] inc)
+                  (update-in [:player :components :inventory] remove-nth idx))
+      (:defence-potion) (-> state
+                  (update-in [:messages] conj "Barkskin potion tastes bad.")
+                  (update-in [:player :components :defender :defence] inc)
+                  (update-in [:player :components :inventory] remove-nth idx))
+      (update-in state [:messages] conj (str "Use " (:itype item) "? How?")))))
 
 (defn pickup [state]
   (let [px (-> state :player :posx)
         py (-> state :player :posy)
         objs (move/objects-at-pos (:objects state) [px py])
-        items (filter #(= :health-potion (-> % second :otype)) objs)]
+        items (filter #(= :item (-> % second :otype)) objs)]
     (if items
       (let [item-idx (first (map first items))
-            item (first (map second items))]
+            item (first (map second items))
+            item-to-add (-> item :components :item-props)]
         (-> state
             (update-in [:objects] remove-nth item-idx)
-            (update-in [:messages] conj (str "You pickup a " (:otype item)))
-            (update-in [:player :components :inventory] conj (:otype item))))
+            (update-in [:messages] conj (str "You pickup a " (comps/itype->txt (:itype item-to-add))))
+            (update-in [:player :components :inventory] conj item-to-add)))
       (update-in state [:messages] conj "Nothing to pickup"))))
 
 ;; Game gen

@@ -71,7 +71,7 @@
    :player [255 255 0]
    :zombie [127 0 0]
    :rat [160 0 160]
-   :health-potion [255 127 127]
+   :item [255 127 127]
    :corpse [200 200 200]
    :troll [127 255 0]})
 
@@ -82,7 +82,7 @@
    :troll \t
    :rat \r
    :corpse \,
-   :health-potion \*
+   :item \*
    :wall \#
    :floor \.})
 
@@ -161,7 +161,9 @@
 
   ;;; Inventory
   (q/with-translation [720 460]
-    (let [inventory (clojure.string/join "\n" (map #(str (first %) (second %)) (map-indexed vector (get-in state [:player :components :inventory]))))]
+    (let [inventory (clojure.string/join "\n" 
+                                         (map #(str (first %) " " (-> % second :itype comps/itype->txt))
+                                              (map-indexed vector (get-in state [:player :components :inventory]))))]
       (q/text "Inventory" 0 0)
       (q/text inventory 10 20)))
 
@@ -171,10 +173,7 @@
       (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
             tobj (first (map second enumerated-tobjs))]
         (if tobj
-          (do
-            (if (get-in tobj [:components :defender])
-              (q/text (str (comps/describe-defender tobj)) 30 50))
-            (q/text (str "There is a " (ent/pretty-name tobj)) 30 30))))))
+          (q/text (comps/describe-obj tobj) 30 30)))))
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]

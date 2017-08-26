@@ -74,19 +74,24 @@
 (defn create-monsters [rooms]
   (vec (map place-monster rooms)))
 
+(defn make-item [itype]
+  {:itype itype})
+
 (defn create-player [px py]
   (ent/->GameObject px py
                     :player
-                    {:inventory [:health-potion :dagger]
+                    {:inventory [(make-item :health-potion) (make-item :dagger)]
                      :attacker {:attack 3}
                      :defender {:defence 1 :max-hp 10 :hp 10}}))
 
 (defn place-potion [{:keys [x1 x2 y1 y2]}]
   (let [px (+ x1 (rand-int (- x2 x1)))
-        py (+ y1 (rand-int (- y2 y1)))]
+        py (+ y1 (rand-int (- y2 y1)))
+        potion-type (rand-nth [:health-potion :health-potion :health-potion :attack-potion :defence-potion])]
     (ent/->GameObject px py
-                      :health-potion
-                      {:passable true})))
+                      :item
+                      {:passable true
+                       :item-props {:itype potion-type}})))
 
 (defn place-potions [rooms]
   (map place-potion rooms))

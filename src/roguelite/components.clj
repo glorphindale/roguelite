@@ -3,6 +3,13 @@
             [roguelite.entities :as ent]
             [roguelite.movement :as move]))
 
+;;; Available components:
+;;;   :attacker {:attack 5}
+;;;   :defender {:defence 2 :max-hp 2 :hp 3}
+;;;   :passable true/false
+;;;   :sound
+;;;   :movement :roam/:attack-nearby
+
 (defn make-a-sound [gobject]
   (let [sound (rand-nth ["howls" "growls" "roars"])]
     (if (> (rand-int 10) 8)
@@ -25,6 +32,24 @@
        (< ratio 0.7) "It is injured."
        (< ratio 1) "It is slightly injured."
        (>= ratio 1) "It is uninjured."))))
+
+(defn itype->txt [itype]
+  (case itype
+    (:health-potion) "Health potion"
+    (:attack-potion) "Rage potion"
+    (:defence-potion) "Barkskin potion"
+    (name itype)))
+
+(defn describe-item [gobject]
+  (let [itype (get-in gobject [:components :item-props :itype])]
+    (itype->txt itype)))
+
+(defn describe-obj [gobject]
+  (if (get-in gobject [:components :defender])
+    (str "You see: " (ent/pretty-name gobject) "\n" (describe-defender gobject))
+    (if (get-in gobject [:components :item-props])
+      (str "You see: " (describe-item gobject))
+      (str "You see: " (ent/pretty-name gobject)))))
 
 (defn roam [state gobject-idx]
   (let [direction (rand-nth [[1 1] [1 -1] [-1 1] [-1 -1] [0 1] [1 0] [0 -1] [-1 0]])]
@@ -51,7 +76,6 @@
               (update-in [:messages] conj message))))
       (roam state gobject-idx))))
 
-;;; Available components
 (defn sound-component [state gobject-idx]
   (let [gobject (nth (:objects state) gobject-idx)]
     (if-let [sound (-> gobject :components :sound)]

@@ -80,3 +80,5 @@
     * Show potions on the map
     * Allowed picking potions up
     * Improved UI: some help text and shuffling around
+    * Add more potions
+    * Proper names for items
