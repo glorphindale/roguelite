@@ -81,6 +81,16 @@
                      :attacker {:attack 3}
                      :defender {:defence 1 :max-hp 10 :hp 10}}))
 
+(defn place-potion [{:keys [x1 x2 y1 y2]}]
+  (let [px (+ x1 (rand-int (- x2 x1)))
+        py (+ y1 (rand-int (- y2 y1)))]
+    (ent/->GameObject px py
+                      :health-potion
+                      {:passable true})))
+
+(defn place-potions [rooms]
+  (map place-potion rooms))
+
 (defn place-player [room]
    (let [[px py] (room-center room)]
      (create-player px py)))

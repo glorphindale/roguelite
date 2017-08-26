@@ -55,6 +55,7 @@
         (:O) (assoc-in state [:no-fog] true)
         (:o) (assoc-in state [:no-fog] false)
         (:u) (assoc-in state [:state] :use-mode)
+        (:p) (game/pickup state)
         (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
         (if (= (:raw-key event) \space)
           (game/wait-step state)
@@ -70,6 +71,7 @@
    :player [255 255 0]
    :zombie [127 0 0]
    :rat [160 0 160]
+   :health-potion [255 127 127]
    :corpse [200 200 200]
    :troll [127 255 0]})
 
@@ -80,6 +82,7 @@
    :troll \t
    :rat \r
    :corpse \,
+   :health-potion \*
    :wall \#
    :floor \.})
 
@@ -174,8 +177,8 @@
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
       (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40))
 
-    (q/with-fill [255 255 0]
-      (q/with-translation [0 80]
+    (q/with-translation [0 80]
+      (q/with-fill [255 255 255]
         (case (:state state)
           (:start) (q/text (str "You see a dungeon around") 0 0)
           (:waiting) (q/text (str "You wait") 0 0)
@@ -183,9 +186,10 @@
           (:walking) (q/text (str "You take a step") 0 0)
           (:attacking) (q/text (str "You attack!") 0 0)
           (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
-          (q/text (str "Current mode " (:state state)) 0 0))
+          (q/text (str "Current mode " (:state state)) 0 0)))
+      (q/with-fill [255 255 0]
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
-          (q/text (str (clojure.string/join "\n" messages)) 0 25)))))
+          (q/text (str (clojure.string/join "\n" (take-last 15 messages))) 0 25)))))
   )
 
 ;;;;; Setup

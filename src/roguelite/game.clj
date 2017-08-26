@@ -8,7 +8,7 @@
 
 (defn combat-round [attacker defender]
   (let [damage (max 0
-                    (- (get-in attacker [:components :attacker :attack])
+                    (- (get-in attacker [:components  :attacker :attack])
                        (get-in defender [:components :defender :defence])))
         nhp (- (get-in defender [:components :defender :hp]) damage)]
     (if (= damage 0)
@@ -47,7 +47,6 @@
 (defn wait-step [state]
     (-> state
         (assoc-in [:state] :waiting)
-        (assoc-in [:messages] []) ;; Clear messages
         (process-gobjects)))
 
 (defn one-step [state dir]
@@ -56,32 +55,47 @@
     (if (seq tobjects)
       (-> state
           (assoc-in [:state] :attacking)
-          (assoc-in [:messages] [])
           (attack (ffirst tobjects))
           (process-gobjects))
       (-> state
           (assoc-in [:state] :walking)
-          (assoc-in [:messages] []) ;; Clear messages
           (update-in [:player] #(move/move-gobject state % dir))
           (process-gobjects)
           ))))
+
+(defn- remove-nth [coll pos]
+  (vec (concat (subvec coll 0 pos) (subvec coll (inc pos)))))
 
 (defn use-item [state key-pressed]
   (let [idx (Integer/parseInt (name key-pressed)) 
         item (get-in state [:player :components :inventory idx])]
     (case item
       (:health-potion) (-> state
-                           (assoc-in [:messages] ["You chug a potion."])
+                           (update-in [:messages] conj "You chug a potion.")
                            (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))
-                           ;;; Delete potion from the inventory
+                           (update-in [:player :components :inventory] remove-nth idx)
                            )
-      (update-in state [:messages] conj (str "IDX " item)))))
+      (update-in state [:messages] conj (str "Don't know what to do with " item)))))
+
+(defn pickup [state]
+  (let [px (-> state :player :posx)
+        py (-> state :player :posy)
+        objs (move/objects-at-pos (:objects state) [px py])
+        items (filter #(= :health-potion (-> % second :otype)) objs)]
+    (if items
+      (let [item-idx (first (map first items))
+            item (first (map second items))]
+        (-> state
+            (update-in [:objects] remove-nth item-idx)
+            (update-in [:messages] conj (str "You pickup a " (:otype item)))
+            (update-in [:player :components :inventory] conj (:otype item))))
+      (update-in state [:messages] conj "Nothing to pickup"))))
 
 ;; Game gen
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)]
     {:player (wgen/place-player (first rooms))
-     :objects (wgen/create-monsters (rest rooms))
+     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-potions rooms)))
      :world tiles
      :rooms rooms
      :messages []
@@ -90,7 +104,7 @@
 (defn simple-game []
   (let [{:keys [rooms tiles]} (wgen/empty-world)]
     {:player (wgen/place-player (first rooms))
-     :objects (wgen/create-monsters (rest rooms))
+     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-potions rooms)))
      :world tiles
      :rooms rooms
      :messages []

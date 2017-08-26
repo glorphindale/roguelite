@@ -5,7 +5,7 @@
 
 (defn make-a-sound [gobject]
   (let [sound (rand-nth ["howls" "growls" "roars"])]
-    (if (> (rand-int 5) 3)
+    (if (> (rand-int 10) 8)
       [gobject (str (ent/pretty-name gobject) " " sound "!")]
       [gobject nil])))
 

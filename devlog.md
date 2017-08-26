@@ -73,3 +73,9 @@
 21.08.2017
     * Refactored components and moved to a proper file
     * Add primitive inventory with potion chugging
+
+26.08.2017
+    * Remove potions from inventory after use
+    * Create potions on the map
+    * Show potions on the map
+    * Allow picking potions up
