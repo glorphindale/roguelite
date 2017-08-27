@@ -8,7 +8,7 @@
 ;;;   :defender {:defence 2 :max-hp 2 :hp 3}
 ;;;   :passable true/false
 ;;;   :sound
-;;;   :movement :roam/:attack-nearby
+;;;   :movement :roam/:attack-nearby/:hunt
 
 (defn make-a-sound [gobject]
   (let [sound (rand-nth ["howls" "growls" "roars"])]
@@ -38,6 +38,7 @@
     (:health-potion) "Health potion"
     (:attack-potion) "Rage potion"
     (:defence-potion) "Barkskin potion"
+    (:dagger) "Dull dagger"
     (name itype)))
 
 (defn describe-item [gobject]
@@ -55,25 +56,36 @@
   (let [direction (rand-nth [[1 1] [1 -1] [-1 1] [-1 -1] [0 1] [1 0] [0 -1] [-1 0]])]
     (update-in state [:objects gobject-idx] #(move/move-gobject state % direction))))
 
-(defn hunt [state gobject-idx]
-  state)
+(defn monster-attack [state combat-func monster player]
+  (let [[nattacker ndefender message] (combat-func monster player)] 
+    (if (= (:otype ndefender) :corpse)
+      (-> state
+          (update-in [:messages] conj message)   
+          (assoc-in [:state] :gameover))  
+      (-> state
+          (assoc-in [:player] ndefender)
+          (update-in [:messages] conj message)))))
 
 (defn attack-nearby [state gobject-idx combat-func]
-  (let [px (get-in state [:player :posx])
-        py (get-in state [:player :posy])
-        mx (get-in state [:objects gobject-idx :posx])
-        my (get-in state [:objects gobject-idx :posy])]
+  (let [player (:player state)
+        px (:posx player) py (:posy player)
+        monster (get-in state [:objects gobject-idx])
+        mx (:posx monster) my (:posy monster)]
     (if (is-player-nearby? [px py] [mx my])
-      (let [attacker (get-in state [:objects gobject-idx])
-            defender (get-in state [:player])
-            [nattacker ndefender message] (combat-func attacker defender)] 
-        (if (= (:otype ndefender) :corpse)
-          (-> state
-              (update-in [:messages] conj message)   
-              (assoc-in [:state] :gameover))  
-          (-> state
-              (assoc-in [:player] ndefender)
-              (update-in [:messages] conj message))))
+      (monster-attack state combat-func monster player)
+      (roam state gobject-idx))))
+
+(defn hunt [state gobject-idx combat-func]
+  " Would not work nicely when :use-fog is not active "
+  (let [player (:player state)
+        px (:posx player) py (:posy player)
+        monster (get-in state [:objects gobject-idx])
+        mx (:posx monster) my (:posy monster)]
+    (if (some #{[mx my]} (get-in state [:visibility]))
+      (if (is-player-nearby? [px py] [mx my])
+        (monster-attack state combat-func monster player)
+        (let [direction (move/offset-towards [mx my] [px py])]
+          (update-in state [:objects gobject-idx] #(move/move-gobject state % direction))))
       (roam state gobject-idx))))
 
 (defn sound-component [state gobject-idx]
@@ -89,6 +101,7 @@
         movement (get-in gobject [:components :movement])]
     (case movement
       (:roam) (roam state gobject-idx)
+      (:hunt) (hunt state gobject-idx combat-func)
       (:attack-nearby) (attack-nearby state gobject-idx combat-func)
       state)
     ))

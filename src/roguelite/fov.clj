@@ -1,5 +1,6 @@
 (ns roguelite.fov
-  (:require [roguelite.movement :as move]))
+  (:require [roguelite.movement :as move]
+            [roguelite.utils :as utils]))
 
 ;; FOV/raycasting
 (def torch-radius 5)
@@ -10,11 +11,8 @@
 (defn deg-to-rad [deg]
   (-> deg (* Math/PI) (/ 180)))
 
-(defn dist [[^Float cx ^Float cy] [^Float px ^Float py]]
-  (Math/sqrt (+ (Math/pow (- cx px) 2) (Math/pow (- cy py) 2))))
-
 (defn lit? [[^Float cx ^Float cy] [^Float px ^Float py]]
-  (< (dist [cx cy] [px py]) torch-radius))
+  (< (utils/dist [cx cy] [px py]) torch-radius))
 
 (defn idxs-on-path [[px py] [tx ty]]
   (let [angle (-> (Math/atan2 (- ty py) (- tx px)) (* 180) (/ Math/PI))
@@ -26,7 +24,7 @@
       (for [step (range 1 torch-radius)
             :let [nx (Math/round (+ sx (* step stepx)))
                   ny (Math/round (+ sy (* step stepy)))]
-            :while (< 0 (dist [nx ny] [tx ty]))]
+            :while (< 0 (utils/dist [nx ny] [tx ty]))]
         [nx ny]))))
 
 (defn is-visible? [[px py] [tx ty] tiles]

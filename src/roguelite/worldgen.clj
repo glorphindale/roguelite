@@ -2,6 +2,7 @@
   (:require [roguelite.entities :as ent]
             [roguelite.components :as comps]))
 
+;;; ===================================== Roomgen
 (defn make-room [x y width height]
   (ent/->Room x y (+ x width) (+ y height)))
 
@@ -59,9 +60,10 @@
         end-y (min (+ start-y height) (dec map-y))]
     (ent/->Room start-x start-y end-x end-y)))
 
+;;; ===================================== Object gen
 (defn random-monster [cx cy]
   (let [mtype (rand-nth [:zombie :troll :rat])
-        behavior (rand-nth [:attack-nearby :roam])]  ;;; roam is kinda lame
+        behavior (rand-nth [:attack-nearby :roam :hunt])]
     (ent/->GameObject cx cy mtype {:attacker {:attack (+ 1 (rand-int 2))}
                                    :defender {:defence 1 :max-hp 3 :hp 3}
                                    :sound :roar
@@ -100,8 +102,7 @@
    (let [[px py] (room-center room)]
      (create-player px py)))
 
-;; World gen
-
+;;; ================================== World gen
 (defn make-pairs [rooms]
   (partition 2 (interleave rooms (rest rooms))))
 

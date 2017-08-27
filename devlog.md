@@ -82,3 +82,6 @@
     * Improved UI: some help text and shuffling around
     * Add more potions
     * Proper names for items
+
+27.08.2017
+    * Add monsters that hunt for player

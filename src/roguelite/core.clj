@@ -46,7 +46,9 @@
   (let [dir (event->direction event)
         world (:world state)]
     (case (:state state)
-      (:gameover) state
+      (:gameover) (if (= (:key event) :r)
+                    (refresh-visibility (game/new-game field-size))
+                    state)
       (:use-mode) (-> state
                       (game/use-item (:key event))
                       (assoc-in [:state] :used-item)) 
@@ -190,12 +192,11 @@
           (:used-item) (q/text (str "") 0 0)
           (:walking) (q/text (str "You take a step") 0 0)
           (:attacking) (q/text (str "You attack!") 0 0)
-          (:gameover) (q/text (str "You are slain! Press R to restart.") 0 0)
+          (:gameover) (q/with-fill [255 0 0] (q/text (str "You are slain!\nPress R to restart.") 0 0))
           (q/text (str "Current mode " (:state state)) 0 0)))
       (q/with-fill [255 255 0]
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
-          (q/text (str (clojure.string/join "\n" (take-last 20 messages))) 0 25)))))
-  )
+          (q/text (str (clojure.string/join "\n" (take-last 20 messages))) 0 32))))))
 
 ;;;;; Setup
 (defn setup []

@@ -1,4 +1,5 @@
-(ns roguelite.movement)
+(ns roguelite.movement
+  (:require [roguelite.utils :as utils]))
 
 ;; Movement
 
@@ -22,6 +23,16 @@
 
 (defn new-position [gobject [dx dy]]
   [(+ (:posx gobject) dx) (+ (:posy gobject) dy)])
+
+(defn offset-towards [[sx sy] [tx ty]]
+  (let [dx (- tx sx)
+        dy (- ty sy)
+        distance (utils/dist [sx sy] [tx ty])]
+    (if (> distance 0)
+      (let [ox (Math/round (/ dx distance))
+            oy (Math/round (/ dy distance))]
+        [ox oy])
+      [0 0])))
 
 (defn move-possible? [state gobject dir]
   (let [new-pos (new-position gobject dir)
