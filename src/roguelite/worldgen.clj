@@ -86,17 +86,21 @@
                      :attacker {:attack 3}
                      :defender {:defence 1 :max-hp 10 :hp 10}}))
 
-(defn place-potion [{:keys [x1 x2 y1 y2]}]
+(defn gen-scroll []
+  (rand-nth [:lightning :aggro :pacify]))
+
+(defn place-item [{:keys [x1 x2 y1 y2]}]
   (let [px (+ x1 (rand-int (- x2 x1)))
         py (+ y1 (rand-int (- y2 y1)))
-        potion-type (rand-nth [:health-potion :health-potion :health-potion :attack-potion :defence-potion])]
-    (ent/->GameObject px py
-                      :item
-                      {:passable true
-                       :item-props {:itype potion-type}})))
+        ;;item-type (rand-nth [:health-potion :health-potion :scroll :attack-potion :defence-potion])
+        item-type (rand-nth [:scroll])
+        item (ent/->GameObject px py :item {:passable true :item-props {:itype item-type}})]
+    (case item-type
+      (:scroll) (assoc-in item [:components :item-props :effect] (gen-scroll))
+      item)))
 
-(defn place-potions [rooms]
-  (map place-potion rooms))
+(defn place-items [rooms]
+  (map place-item rooms))
 
 (defn place-player [room]
    (let [[px py] (room-center room)]
@@ -127,8 +131,7 @@
           (carve-v-tunnel cx2 cy1 cy2))
       (-> world
           (carve-v-tunnel cx1 cy1 cy2)
-          (carve-h-tunnel cx1 cx2 cy2))
-      )))
+          (carve-h-tunnel cx1 cx2 cy2)))))
 
 (defn simple-world [map-size room-config]
   (let [full-map (make-map map-size)

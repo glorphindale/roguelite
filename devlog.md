@@ -85,3 +85,7 @@
 
 27.08.2017
     * Add monsters that hunt for player
+
+29.08.2017
+    * Broke half the game when trying to add scrolls (I hate that map converts vectors to lazy sequences)
+    * Added three mysterious scrolls

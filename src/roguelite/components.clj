@@ -39,11 +39,12 @@
     (:attack-potion) "Rage potion"
     (:defence-potion) "Barkskin potion"
     (:dagger) "Dull dagger"
+    (:scroll) "Mysterious scroll"
     (name itype)))
 
 (defn describe-item [gobject]
   (let [itype (get-in gobject [:components :item-props :itype])]
-    (itype->txt itype)))
+    (str (itype->txt itype) (get-in gobject [:components :item-props :effect] ""))))
 
 (defn describe-obj [gobject]
   (if (get-in gobject [:components :defender])

@@ -8,7 +8,7 @@
 
 (defn combat-round [attacker defender]
   (let [damage (max 0
-                    (- (get-in attacker [:components  :attacker :attack])
+                    (- (get-in attacker [:components :attacker :attack])
                        (get-in defender [:components :defender :defence])))
         nhp (- (get-in defender [:components :defender :hp]) damage)]
     (if (= damage 0)
@@ -38,7 +38,7 @@
 (defn attack [state gobject-idx]
   (let [attacker (:player state)
         defender (get-in state [:objects gobject-idx])
-        [nattacker ndefender message] (combat-round attacker defender)]
+        [nattacker ndefender message] (combat-round attacker defender)] 
     (-> state
         (assoc-in [:player] nattacker)
         (assoc-in [:objects gobject-idx] ndefender)
@@ -66,23 +66,78 @@
 (defn- remove-nth [coll pos]
   (vec (concat (subvec coll 0 pos) (subvec coll (inc pos)))))
 
+(defn use-attack-potion [state idx]
+  (-> state
+      (update-in [:messages] conj "You drink, you strong.")
+      (update-in [:player :components :attacker :attack] inc)))
+
+(defn use-health-potion [state idx]
+  (-> state
+      (update-in [:messages] conj "You chug a health potion.")
+      (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))))
+
+(defn use-defence-potion [state idx]
+  (-> state
+      (update-in [:messages] conj "Barkskin potion tastes bad.")
+      (update-in [:player :components :defender :defence] inc)))
+
+(defn- extract-pos [gobject]
+  [(:posx gobject) (:posy gobject)])
+
+(defn use-lightning-scroll [state idx]
+  (let [monsters (filter #(get-in (second %) [:components :defender] false)
+                         (map-indexed vector (:objects state)))
+        visible-monsters (filter #(some #{(extract-pos %)} (:visibility state)) monsters)]
+    (if (seq? visible-monsters)
+      (-> state
+          (update-in [:messages] conj (str "Lightning strikes the "
+                                           (ent/pretty-name (ffirst visible-monsters)))))
+      (-> state
+          (update-in [:messages] conj "No targets nearby")))))
+
+(defn pacify [gobjects]
+  (letfn [(pacify-single [gobject] (if (get-in gobject [:components :movement])
+                                     (assoc-in gobject [:components :movement] :roam)
+                                     gobject))]
+    (vec (map pacify-single gobjects))))
+
+(defn rage [gobjects]
+  (letfn [(rage-single [gobject] (if (get-in gobject [:components :movement])
+                                   (assoc-in gobject [:components :movement] :hunt)
+                                   gobject))]
+    (vec (map rage-single gobjects))))
+
+(defn use-pacify-scroll [state idx]
+  (-> state
+      (update-in [:messages] conj "Suddenly monsters seem less angry")
+      (update-in [:objects] pacify)))
+
+(defn use-rage-scroll [state idx]
+  (-> state
+      (update-in [:messages] conj "Suddenly monsters seem very angry")
+      (update-in [:objects] rage)))
+
+(defn use-scroll [state item idx]
+  (try
+    (let [effect (get-in item [:effect])]
+      (case effect
+        ;;(:lightning) (use-lightning-scroll state idx)
+        (:aggro) (use-rage-scroll state idx)
+        (:pacify) (use-pacify-scroll state idx)
+        (update-in state [:messages] conj (str "Effect " effect))))
+    (catch Exception e (update-in state [:messages] conj e))))
+
 (defn use-item [state key-pressed]
   (let [idx (Integer/parseInt (name key-pressed)) 
-        item (get-in state [:player :components :inventory idx])]
-    (case (:itype item)
-      (:health-potion) (-> state
-                  (update-in [:messages] conj "You chug a health potion.")
-                  (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))
-                  (update-in [:player :components :inventory] remove-nth idx))
-      (:attack-potion) (-> state
-                  (update-in [:messages] conj "You drink, you strong.")
-                  (update-in [:player :components :attacker :attack] inc)
-                  (update-in [:player :components :inventory] remove-nth idx))
-      (:defence-potion) (-> state
-                  (update-in [:messages] conj "Barkskin potion tastes bad.")
-                  (update-in [:player :components :defender :defence] inc)
-                  (update-in [:player :components :inventory] remove-nth idx))
-      (update-in state [:messages] conj (str "Use " (:itype item) "? How?")))))
+        item (get-in state [:player :components :inventory idx])
+        changed-state (case (:itype item)
+                        (:health-potion) (use-health-potion state idx)
+                        (:attack-potion) (use-attack-potion state idx)
+                        (:defence-potion) (use-defence-potion state idx)
+                        (:scroll) (use-scroll state item idx)
+                        (update-in state [:messages] conj (str "You break " (:itype item) " when using it." )))]
+    #_(update-in changed-state [:player :components :inventory] remove-nth idx)
+    changed-state))
 
 (defn pickup [state]
   (let [px (-> state :player :posx)
@@ -103,7 +158,7 @@
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)]
     {:player (wgen/place-player (first rooms))
-     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-potions rooms)))
+     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
      :world tiles
      :rooms rooms
      :messages []
@@ -112,7 +167,7 @@
 (defn simple-game []
   (let [{:keys [rooms tiles]} (wgen/empty-world)]
     {:player (wgen/place-player (first rooms))
-     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-potions rooms)))
+     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
      :world tiles
      :rooms rooms
      :messages []

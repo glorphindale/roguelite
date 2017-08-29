@@ -11,7 +11,7 @@
 (set! *warn-on-reflection* true)
 
 (def field-size [35 35])
-(def screen-size [1200 700])
+(def screen-size [1500 700])
 
 ;;; Input processing
 (defn event->direction [event]
@@ -42,7 +42,7 @@
       (game/one-step dir)
       (refresh-visibility)))
 
-(defn key-pressed [state event]
+(defn key-pressed-int [state event]
   (let [dir (event->direction event)
         world (:world state)]
     (case (:state state)
@@ -63,6 +63,10 @@
           (game/wait-step state)
           (process-movement state dir))))))
 
+(defn key-pressed [state event]
+  (try
+    (key-pressed-int state event)
+    (catch Exception e (update-in state [:messages] conj e))))
 
 ;;;;; Drawing
 (def tile-size 16)
@@ -175,7 +179,8 @@
       (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
             tobj (first (map second enumerated-tobjs))]
         (if tobj
-          (q/text (comps/describe-obj tobj) 30 30)))))
+          (q/text (comps/describe-obj tobj) 30 30)  ;; TODO DEBUG CODE
+          #_(q/text (pr-str (-> tobj :components :movement)) -100 50)))))
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]
