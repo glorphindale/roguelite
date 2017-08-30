@@ -164,11 +164,12 @@
   ;;; Mouse look
   (q/with-translation [(first field-start) 10]
     (when-let [coords (mouse-to-coords (q/mouse-x) (q/mouse-y))]
-      (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
-            tobj (first (map second enumerated-tobjs))]
-        (if tobj
-          (q/text (comps/describe-obj tobj) 30 30)  ;; TODO DEBUG CODE
-          #_(q/text (pr-str (-> tobj :components :movement)) -100 50)))))
+      (when (some #{coords} (:visibility state))
+        (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
+              tobj (first (map second enumerated-tobjs))]
+          (if tobj
+            (q/text (comps/describe-obj tobj) 30 30)  ;; TODO DEBUG CODE
+            #_(q/text (pr-str (-> tobj :components :movement)) -100 50))))))
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]
