@@ -3,7 +3,6 @@
             [quil.middleware :as m]
             [roguelite.entities :as ent]
             [roguelite.components :as comps]
-            [roguelite.fov :as fov]
             [roguelite.movement :as move]
             [roguelite.game :as game])
   (:import [java.awt.event KeyEvent]))
@@ -26,28 +25,17 @@
       (35) [-1 1]  (40) [0 1]  (34) [1 1]
       [0 0])))
 
-(defn refresh-visibility [state]
-  (if (:no-fog state)
-    (-> state
-        (assoc-in [:visibility] (move/gen-tile-coords (:world state)))
-        (update-in [:world] #(fov/update-discovered (:visibility state) %)))
-    (-> state
-        (assoc-in [:visibility] (fov/get-visible-tiles
-                                  [(get-in state [:player :posx]) (get-in state [:player :posy])]
-                                  (:world state)))
-        (update-in [:world] #(fov/update-discovered (:visibility state) %)))))
-
 (defn process-movement [state dir]
   (-> state
       (game/one-step dir)
-      (refresh-visibility)))
+      (game/refresh-visibility)))
 
 (defn key-pressed-int [state event]
   (let [dir (event->direction event)
         world (:world state)]
     (case (:state state)
       (:gameover) (if (= (:key event) :r)
-                    (refresh-visibility (game/new-game field-size))
+                    (game/new-game field-size) 
                     state)
       (:use-mode) (-> state
                       (game/use-item (:key event))
@@ -58,7 +46,7 @@
         (:o) (assoc-in state [:no-fog] false)
         (:u) (assoc-in state [:state] :use-mode)
         (:p) (game/pickup state)
-        (:r) (refresh-visibility (game/new-game field-size))  ;;; Restart
+        (:r) (game/new-game field-size)  ;;; Restart
         (if (= (:raw-key event) \space)
           (game/wait-step state)
           (process-movement state dir))))))
@@ -209,7 +197,7 @@
   (q/color-mode :rgb)
   (let [font (q/load-font "DFBisasam16x16-16.vlw")]
     (q/text-font font 16))
-  (refresh-visibility (game/simple-game)))
+  (game/simple-game))
 
 (defn update-state [state]
   state)

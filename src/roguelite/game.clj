@@ -1,6 +1,7 @@
 (ns roguelite.game
   (:require [roguelite.entities :as ent]
             [roguelite.components :as comps]
+            [roguelite.fov :as fov]
             [roguelite.movement :as move]
             [roguelite.worldgen :as wgen]))
 
@@ -163,21 +164,34 @@
             (update-in [:player :components :inventory] conj item-to-add)))
       (ent/+msg state "Nothing to pickup"))))
 
+(defn refresh-visibility [state]
+  (if (:no-fog state)
+    (-> state
+        (assoc-in [:visibility] (move/gen-tile-coords (:world state)))
+        (update-in [:world] #(fov/update-discovered (:visibility state) %)))
+    (-> state
+        (assoc-in [:visibility] (fov/get-visible-tiles
+                                  [(get-in state [:player :posx]) (get-in state [:player :posy])]
+                                  (:world state)))
+        (update-in [:world] #(fov/update-discovered (:visibility state) %)))))
+
 ;; Game gen
 (defn new-game [map-size]
-  (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)]
-    {:player (wgen/place-player (first rooms))
-     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
-     :world tiles
-     :rooms rooms
-     :messages []
-     :state :start}))
+  (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)
+        world {:player (wgen/place-player (first rooms))
+               :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
+               :world tiles
+               :rooms rooms
+               :messages []
+               :state :start}]
+    (refresh-visibility world)))
 
 (defn simple-game []
-  (let [{:keys [rooms tiles]} (wgen/empty-world)]
-    {:player (wgen/place-player (first rooms))
-     :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
-     :world tiles
-     :rooms rooms
-     :messages []
-     :state :start}))
+  (let [{:keys [rooms tiles]} (wgen/empty-world)
+        world {:player (wgen/place-player (first rooms))
+               :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
+               :world tiles
+               :rooms rooms
+               :messages []
+               :state :start}]
+    (refresh-visibility world)))
