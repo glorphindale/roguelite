@@ -94,3 +94,4 @@
     * Make lightning bolt scroll do actual lightning strikes
     * Refactor message manipulation
     * Fix bugs and some structure refactoring
+    * Make mouse-look pointer visible

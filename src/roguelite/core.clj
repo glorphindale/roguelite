@@ -134,6 +134,18 @@
   (q/stroke-weight 0)
   (q/background 0)
 
+  ;;; Mouse look
+  (when-let [coords (mouse-to-coords (q/mouse-x) (q/mouse-y))]
+    (when (some #{coords} (:visibility state))
+      (do 
+        (q/with-fill [100 100 100]
+          (q/rect (+ (first field-start) (* (first coords) tile-size)) (+ (- tile-size) (second field-start) (* (second coords) tile-size)) tile-size tile-size))
+        (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
+              tobj (first (map second enumerated-tobjs))]
+          (when tobj
+            (q/with-translation [(first field-start) 10]
+              (q/text (comps/describe-obj tobj) 30 30)))))))
+
   (q/with-translation field-start
     (draw-tiles state)
 
@@ -160,16 +172,6 @@
                                               (map-indexed vector (get-in state [:player :components :inventory]))))]
       (q/text "Inventory" 0 0)
       (q/text inventory 10 20)))
-
-  ;;; Mouse look
-  (q/with-translation [(first field-start) 10]
-    (when-let [coords (mouse-to-coords (q/mouse-x) (q/mouse-y))]
-      (when (some #{coords} (:visibility state))
-        (let [enumerated-tobjs (move/objects-at-pos (:objects state) coords)
-              tobj (first (map second enumerated-tobjs))]
-          (if tobj
-            (q/text (comps/describe-obj tobj) 30 30)  ;; TODO DEBUG CODE
-            #_(q/text (pr-str (-> tobj :components :movement)) -100 50))))))
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]
