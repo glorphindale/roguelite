@@ -6,3 +6,6 @@
 
 (defn pretty-name [gobject]
   (-> gobject :otype name clojure.string/capitalize))
+
+(defn +msg [state message]
+  (update-in state [:messages] conj message))

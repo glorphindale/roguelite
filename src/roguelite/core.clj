@@ -66,7 +66,7 @@
 (defn key-pressed [state event]
   (try
     (key-pressed-int state event)
-    (catch Exception e (update-in state [:messages] conj e))))
+    (catch Exception e (ent/+msg state e))))
 
 ;;;;; Drawing
 (def tile-size 16)
@@ -193,7 +193,7 @@
         (case (:state state)
           (:start) (q/text (str "You see a dungeon around") 0 0)
           (:waiting) (q/text (str "You wait") 0 0)
-          (:use-mode) (q/text (str "Select an item to use 1-9") 0 0)
+          (:use-mode) (q/text (str "Select an item to use 0-9") 0 0)
           (:used-item) (q/text (str "") 0 0)
           (:walking) (q/text (str "You take a step") 0 0)
           (:attacking) (q/text (str "You attack!") 0 0)

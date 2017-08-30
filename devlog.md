@@ -92,3 +92,4 @@
 
 30.08.2017
     * Make lightning bolt scroll do actual lightning strikes
+    * Refactor message manipulation

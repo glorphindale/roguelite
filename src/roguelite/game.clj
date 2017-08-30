@@ -45,7 +45,7 @@
     (-> state
         (assoc-in [:player] nattacker)
         (assoc-in [:objects gobject-idx] ndefender)
-        (update-in [:messages] conj message))))
+        (ent/+msg message))))
 
 (defn wait-step [state]
     (-> state
@@ -71,17 +71,17 @@
 
 (defn use-attack-potion [state idx]
   (-> state
-      (update-in [:messages] conj "You drink, you strong.")
+      (ent/+msg "You drink, you strong.")
       (update-in [:player :components :attacker :attack] inc)))
 
 (defn use-health-potion [state idx]
   (-> state
-      (update-in [:messages] conj "You chug a health potion.")
+      (ent/+msg "You chug a health potion.")
       (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))))
 
 (defn use-defence-potion [state idx]
   (-> state
-      (update-in [:messages] conj "Barkskin potion tastes bad.")
+      (ent/+msg "Barkskin potion tastes bad.")
       (update-in [:player :components :defender :defence] inc)))
 
 (defn- extract-pos [[_ gobject]]
@@ -96,12 +96,11 @@
       (let [[gobj-idx defender] target
             [ndefender message] (apply-damage (:player state) defender 5)]  ;; HARDCODE FOR DAMAGE
         (-> state
-            (update-in [:messages] conj (str "Lightning strikes the "
-                                             (ent/pretty-name defender)))
-            (update-in [:messages] conj message)
+            (ent/+msg (str "Lightning strikes the " (ent/pretty-name defender)))
+            (ent/+msg message)
             (assoc-in [:objects gobj-idx] ndefender)))
       (-> state
-          (update-in [:messages] conj "No targets nearby")))))
+          (ent/+msg "No targets nearby")))))
 
 (defn pacify [gobjects]
   (letfn [(pacify-single [gobject] (if (get-in gobject [:components :movement])
@@ -117,12 +116,12 @@
 
 (defn use-pacify-scroll [state idx]
   (-> state
-      (update-in [:messages] conj "Suddenly monsters seem less angry")
+      (ent/+msg "Suddenly monsters seem less angry")
       (update-in [:objects] pacify)))
 
 (defn use-rage-scroll [state idx]
   (-> state
-      (update-in [:messages] conj "Suddenly monsters seem very angry")
+      (ent/+msg "Suddenly monsters seem very angry")
       (update-in [:objects] rage)))
 
 (defn use-scroll [state item idx]
@@ -132,34 +131,37 @@
         (:lightning) (use-lightning-scroll state idx)
         (:aggro) (use-rage-scroll state idx)
         (:pacify) (use-pacify-scroll state idx)
-        (update-in state [:messages] conj (str "Effect " effect))))
-    (catch Exception e (update-in state [:messages] conj e))))
+        (ent/+msg state (str "Effect " effect))))
+    (catch Exception e (ent/+msg state e))))
 
 (defn use-item [state key-pressed]
-  (let [idx (Integer/parseInt (name key-pressed)) 
-        item (get-in state [:player :components :inventory idx])
-        changed-state (case (:itype item)
-                        (:health-potion) (use-health-potion state idx)
-                        (:attack-potion) (use-attack-potion state idx)
-                        (:defence-potion) (use-defence-potion state idx)
-                        (:scroll) (use-scroll state item idx)
-                        (update-in state [:messages] conj (str "You break " (:itype item) " when using it." )))]
-    (update-in changed-state [:player :components :inventory] remove-nth idx)))
+  (try
+    (let [idx (Integer/parseInt (name key-pressed)) 
+          item (get-in state [:player :components :inventory idx])
+          changed-state (case (:itype item)
+                          (:health-potion) (use-health-potion state idx)
+                          (:attack-potion) (use-attack-potion state idx)
+                          (:defence-potion) (use-defence-potion state idx)
+                          (:scroll) (use-scroll state item idx)
+                          (ent/+msg state (str "You break " (:itype item) " when using it." )))]
+      (update-in changed-state [:player :components :inventory] remove-nth idx))
+    (catch IndexOutOfBoundsException e (ent/+msg state "No such item"))  
+    (catch NumberFormatException e (ent/+msg state "No such item"))))
 
 (defn pickup [state]
   (let [px (-> state :player :posx)
         py (-> state :player :posy)
         objs (move/objects-at-pos (:objects state) [px py])
         items (filter #(= :item (-> % second :otype)) objs)]
-    (if items
+    (if (seq items)
       (let [item-idx (first (map first items))
             item (first (map second items))
             item-to-add (-> item :components :item-props)]
         (-> state
             (update-in [:objects] remove-nth item-idx)
-            (update-in [:messages] conj (str "You pickup a " (comps/itype->txt (:itype item-to-add))))
+            (ent/+msg (str "You pickup a " (comps/itype->txt (:itype item-to-add))))
             (update-in [:player :components :inventory] conj item-to-add)))
-      (update-in state [:messages] conj "Nothing to pickup"))))
+      (ent/+msg state "Nothing to pickup"))))
 
 ;; Game gen
 (defn new-game [map-size]

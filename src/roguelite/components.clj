@@ -61,11 +61,11 @@
   (let [[nattacker ndefender message] (combat-func monster player)] 
     (if (= (:otype ndefender) :corpse)
       (-> state
-          (update-in [:messages] conj message)   
+          (ent/+msg message)   
           (assoc-in [:state] :gameover))  
       (-> state
           (assoc-in [:player] ndefender)
-          (update-in [:messages] conj message)))))
+          (ent/+msg message)))))
 
 (defn attack-nearby [state gobject-idx combat-func]
   (let [player (:player state)
@@ -94,7 +94,7 @@
     (if-let [sound (-> gobject :components :sound)]
       (let [[nobj msg] (make-a-sound gobject)]
         (-> state
-            (update-in [:messages] conj msg)))
+            (ent/+msg msg)))
       state)))
 
 (defn move-component [state gobject-idx combat-func]
