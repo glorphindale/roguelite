@@ -89,3 +89,6 @@
 29.08.2017
     * Broke half the game when trying to add scrolls (I hate that map converts vectors to lazy sequences)
     * Added three mysterious scrolls
+
+30.08.2017
+    * Make lightning bolt scroll do actual lightning strikes

@@ -6,20 +6,23 @@
 
 ;; High-level logic
 
+(defn apply-damage [attacker defender damage]
+  (let [nhp (- (get-in defender [:components :defender :hp]) damage)]
+    (if (> nhp 0)
+      [(assoc-in defender [:components :defender :hp] nhp)
+       (str (ent/pretty-name attacker) " hits " (ent/pretty-name defender) " for " damage)]
+      [(ent/->GameObject (:posx defender) (:posy defender) :corpse {:passable true})
+       (str (ent/pretty-name attacker) " slays " (ent/pretty-name defender) "!")]))) 
+
 (defn combat-round [attacker defender]
   (let [damage (max 0
                     (- (get-in attacker [:components :attacker :attack])
-                       (get-in defender [:components :defender :defence])))
-        nhp (- (get-in defender [:components :defender :hp]) damage)]
+                       (get-in defender [:components :defender :defence])))]
     (if (= damage 0)
       [attacker defender (str (ent/pretty-name defender) " is unamazed by strike.")]
-      (if (> nhp 0)
-        [attacker
-         (assoc-in defender [:components :defender :hp] nhp)
-         (str (ent/pretty-name attacker) " hits " (ent/pretty-name defender) " for " damage)]
-        [attacker
-         (ent/->GameObject (:posx defender) (:posy defender) :corpse {:passable true})
-         (str (ent/pretty-name attacker) " slays " (ent/pretty-name defender) "!")]))))
+      (let [[ndefender message] (apply-damage attacker defender damage)]
+        [attacker ndefender message]))))
+
 
 (defn process-gobject [state gobject-idx]
   (-> state
@@ -81,17 +84,22 @@
       (update-in [:messages] conj "Barkskin potion tastes bad.")
       (update-in [:player :components :defender :defence] inc)))
 
-(defn- extract-pos [gobject]
+(defn- extract-pos [[_ gobject]]
   [(:posx gobject) (:posy gobject)])
 
 (defn use-lightning-scroll [state idx]
   (let [monsters (filter #(get-in (second %) [:components :defender] false)
                          (map-indexed vector (:objects state)))
-        visible-monsters (filter #(some #{(extract-pos %)} (:visibility state)) monsters)]
-    (if (seq? visible-monsters)
-      (-> state
-          (update-in [:messages] conj (str "Lightning strikes the "
-                                           (ent/pretty-name (ffirst visible-monsters)))))
+        visible-monsters (filter #(some #{(extract-pos %)} (:visibility state)) monsters)
+        target (first visible-monsters)]
+    (if target
+      (let [[gobj-idx defender] target
+            [ndefender message] (apply-damage (:player state) defender 5)]  ;; HARDCODE FOR DAMAGE
+        (-> state
+            (update-in [:messages] conj (str "Lightning strikes the "
+                                             (ent/pretty-name defender)))
+            (update-in [:messages] conj message)
+            (assoc-in [:objects gobj-idx] ndefender)))
       (-> state
           (update-in [:messages] conj "No targets nearby")))))
 
@@ -121,7 +129,7 @@
   (try
     (let [effect (get-in item [:effect])]
       (case effect
-        ;;(:lightning) (use-lightning-scroll state idx)
+        (:lightning) (use-lightning-scroll state idx)
         (:aggro) (use-rage-scroll state idx)
         (:pacify) (use-pacify-scroll state idx)
         (update-in state [:messages] conj (str "Effect " effect))))
@@ -136,8 +144,7 @@
                         (:defence-potion) (use-defence-potion state idx)
                         (:scroll) (use-scroll state item idx)
                         (update-in state [:messages] conj (str "You break " (:itype item) " when using it." )))]
-    #_(update-in changed-state [:player :components :inventory] remove-nth idx)
-    changed-state))
+    (update-in changed-state [:player :components :inventory] remove-nth idx)))
 
 (defn pickup [state]
   (let [px (-> state :player :posx)
