@@ -6,6 +6,9 @@ Worldgen
 Entities
     * using posx/posy for GameObject is inconvenient, should be abstrated to 'position'
 
+UI
+    Add mouse targeting - unclear how to implement properly
+
 Inventory
     * Items should start at 1
 

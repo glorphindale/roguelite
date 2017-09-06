@@ -149,6 +149,17 @@
     (catch IndexOutOfBoundsException e (ent/+msg state "No such item"))  
     (catch NumberFormatException e (ent/+msg state "No such item"))))
 
+(defn drop-item [state key-pressed]
+  (try
+    (let [idx (Integer/parseInt (name key-pressed)) 
+          item (get-in state [:player :components :inventory idx])
+          [px py] (ent/get-pos (:player state))]
+      (-> state 
+        (update-in [:player :components :inventory] remove-nth idx)
+        (update-in [:objects] conj (ent/->GameObject px py :item {:passable true :item-props item}))))
+    (catch IndexOutOfBoundsException e (ent/+msg state "No such item"))  
+    (catch NumberFormatException e (ent/+msg state "No such item"))))
+
 (defn pickup [state]
   (let [px (-> state :player :posx)
         py (-> state :player :posy)

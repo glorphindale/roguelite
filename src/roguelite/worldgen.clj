@@ -92,8 +92,7 @@
 (defn place-item [{:keys [x1 x2 y1 y2]}]
   (let [px (+ x1 (rand-int (- x2 x1)))
         py (+ y1 (rand-int (- y2 y1)))
-        ;;item-type (rand-nth [:health-potion :health-potion :scroll :attack-potion :defence-potion])
-        item-type (rand-nth [:scroll])
+        item-type (rand-nth [:health-potion :health-potion :scroll :attack-potion :defence-potion])
         item (ent/->GameObject px py :item {:passable true :item-props {:itype item-type}})]
     (case item-type
       (:scroll) (assoc-in item [:components :item-props :effect] (gen-scroll))

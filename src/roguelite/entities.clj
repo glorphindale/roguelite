@@ -9,3 +9,6 @@
 
 (defn +msg [state message]
   (update-in state [:messages] conj message))
+
+(defn get-pos [gobject]
+  [(:posx gobject) (:posy gobject)])

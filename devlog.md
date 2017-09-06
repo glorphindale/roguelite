@@ -95,3 +95,8 @@
     * Refactor message manipulation
     * Fix bugs and some structure refactoring
     * Make mouse-look pointer visible
+
+06.09.2017
+    * Allow dropping items
+    * Add main menu
+    * Add save/load

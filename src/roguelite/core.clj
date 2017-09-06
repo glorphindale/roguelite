@@ -4,13 +4,17 @@
             [roguelite.entities :as ent]
             [roguelite.components :as comps]
             [roguelite.movement :as move]
-            [roguelite.game :as game])
+            [roguelite.game :as game] 
+            [roguelite.saving :as saving])
   (:import [java.awt.event KeyEvent]))
 
 (set! *warn-on-reflection* true)
 
 (def field-size [35 35])
 (def screen-size [1500 700])
+
+(defn init-game []
+  {:state :menu :selected 0})
 
 ;;; Input processing
 (defn event->direction [event]
@@ -34,27 +38,51 @@
   (let [dir (event->direction event)
         world (:world state)]
     (case (:state state)
-      (:gameover) (if (= (:key event) :r)
-                    (game/new-game field-size) 
-                    state)
+      (:gameover) (do
+                    (saving/delete-save init-game)
+                    (if (= (:key event) :r)
+                      (game/new-game field-size) 
+                      state))
       (:use-mode) (-> state
                       (game/use-item (:key event))
                       (assoc-in [:state] :used-item)) 
+      (:drop-mode) (-> state
+                       (game/drop-item (:key event))
+                       (assoc-in [:state] :dropped-item))
       (case (:key event)
         ;;; Cheat codes for debugging
         (:O) (assoc-in state [:no-fog] true)
         (:o) (assoc-in state [:no-fog] false)
         (:u) (assoc-in state [:state] :use-mode)
+        (:d) (assoc-in state [:state] :drop-mode)
+        (:S) (do
+               (saving/save-game state)
+               (ent/+msg state "Game saved"))
         (:p) (game/pickup state)
         (:r) (game/new-game field-size)  ;;; Restart
-        (if (= (:raw-key event) \space)
-          (game/wait-step state)
-          (process-movement state dir))))))
+        (case (long (:key-code event)) 
+          (32 10) (game/wait-step state)
+          (33 34 35 36 37 38 39 40) (process-movement state dir)
+          state)))))
+
+(defn key-pressed-menu [state event]
+  (if (= (:raw-key event) \newline)
+    (case (long (:selected state))
+      0 (game/simple-game)
+      1 (if (saving/has-save)
+           (saving/load-game)
+          state))
+    (case (:key event)
+      (:down) (update-in state [:selected] #(min 1 (inc %))) 
+      (:up)   (update-in state [:selected] #(max 0 (dec %)))
+      state)))
 
 (defn key-pressed [state event]
   (try
-    (key-pressed-int state event)
-    (catch Exception e (ent/+msg state e))))
+    (case (:state state)
+      (:menu) (key-pressed-menu state event)
+      (key-pressed-int state event))
+    (catch Exception e (q/text (str "Exception: " e) 20 20))))
 
 ;;;;; Drawing
 (def tile-size 16)
@@ -130,7 +158,7 @@
       [px py]
       nil)))
 
-(defn draw-state [state]
+(defn draw-gameplay [state]
   (q/stroke-weight 0)
   (q/background 0)
 
@@ -161,9 +189,9 @@
         (draw-gameobject player))))
 
   (q/with-translation [100 650]
-    (q/text "a/w/s/d/arrows to move and attack" 0 0) 
-    (q/text "'u' to use an item " 0 20) 
-    (q/text "'p' to pickup an item " 0 40))
+    (q/text "a/w/s/d/arrows to move and attack, spacebar to wait" 0 0) 
+    (q/text "'u' to use an item, 'p' to pickup an item " 0 20) 
+    (q/text "'S' to save" 0 40))
 
   ;;; Inventory
   (q/with-translation [720 460]
@@ -185,14 +213,36 @@
           (:start) (q/text (str "You see a dungeon around") 0 0)
           (:waiting) (q/text (str "You wait") 0 0)
           (:use-mode) (q/text (str "Select an item to use 0-9") 0 0)
-          (:used-item) (q/text (str "") 0 0)
+          (:drop-mode) (q/text (str "Select an item to drop 0-9") 0 0)
           (:walking) (q/text (str "You take a step") 0 0)
           (:attacking) (q/text (str "You attack!") 0 0)
           (:gameover) (q/with-fill [255 0 0] (q/text (str "You are slain!\nPress R to restart.") 0 0))
-          (q/text (str "Current mode " (:state state)) 0 0)))
+          (q/text (str "") 0 0)))
       (q/with-fill [255 255 0]
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
           (q/text (str (clojure.string/join "\n" (take-last 20 messages))) 0 32))))))
+
+(defn draw-menu [state]
+  (q/background 0)
+  (let [[w h] screen-size
+        cx (- (/ w 2) 100)
+        cy (/ h 2)
+        marker-y (* 20 (:selected state))]
+    (q/with-translation [cx cy]
+      (q/with-fill [200 100 100]
+        (q/text "Dungeons of Clojurelike" -40 -20))
+      (q/with-fill [200 0 0]
+        (q/text "New game" 0 0)
+        (if (saving/has-save)
+          (q/text "Load previous game" 0 20) 
+          (q/with-fill [100 100 100]
+            (q/text "Load previous game" 0 20)))
+        (q/text "->" -40 marker-y)))))
+
+(defn draw-state [state]
+  (case (:state state)
+    (:menu) (draw-menu state)
+    (draw-gameplay state)))
 
 ;;;;; Setup
 (defn setup []
@@ -200,7 +250,7 @@
   (q/color-mode :rgb)
   (let [font (q/load-font "DFBisasam16x16-16.vlw")]
     (q/text-font font 16))
-  (game/simple-game))
+  (init-game))
 
 (defn update-state [state]
   state)
