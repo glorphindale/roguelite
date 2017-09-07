@@ -100,3 +100,6 @@
     * Allow dropping items
     * Add main menu
     * Add save/load
+
+07.09.2017
+    * Make game continious - player can go downstairs to a new dungeon level

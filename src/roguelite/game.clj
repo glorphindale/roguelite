@@ -5,6 +5,7 @@
             [roguelite.movement :as move]
             [roguelite.worldgen :as wgen]))
 
+(def field-size [35 35])
 ;; High-level logic
 
 (defn apply-damage [attacker defender damage]
@@ -189,20 +190,43 @@
 ;; Game gen
 (defn new-game [map-size]
   (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)
-        world {:player (wgen/place-player (first rooms))
-               :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
+        world {:objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
                :world tiles
                :rooms rooms
                :messages []
+               :level 1
                :state :start}]
-    (refresh-visibility world)))
+    world))
 
 (defn simple-game []
   (let [{:keys [rooms tiles]} (wgen/empty-world)
-        world {:player (wgen/place-player (first rooms))
-               :objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
+        world {:objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
                :world tiles
                :rooms rooms
                :messages []
+               :level 1
                :state :start}]
-    (refresh-visibility world)))
+    world))
+
+(defn inject-player
+  ([world]
+   (let [player (wgen/place-player (first (:rooms world)))
+         nworld (assoc-in world [:player] player)]
+     (refresh-visibility (assoc-in nworld [:visibility] []))))
+  ([world player]
+   (let [player (wgen/place-player (first (:rooms world)) player)
+         nworld (assoc-in world [:player] player)]
+     (refresh-visibility (assoc-in nworld [:visibility] [])))))
+
+(defn try-descend [state]
+  (let [[px py] (ent/get-pos (:player state))]
+    (if (get-in state [:world px py :props :stairs])
+      (let [next-level (new-game field-size)
+            player (:player state)]
+        (-> state
+            (assoc-in [:world] (:world next-level))
+            (assoc-in [:objects] (:objects next-level))
+            (assoc-in [:rooms] (:rooms next-level))
+            (update-in [:level] inc)
+            (inject-player player)))
+      (ent/+msg state "You need stairs to descend"))))

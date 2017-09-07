@@ -101,9 +101,24 @@
 (defn place-items [rooms]
   (map place-item rooms))
 
-(defn place-player [room]
+(defn place-player
+  ([room]
+   (let [player (create-player 0 0)]
+     (place-player room player)))
+  ([room player]
    (let [[px py] (room-center room)]
-     (create-player px py)))
+     (-> player
+         (assoc-in [:posx] px)
+         (assoc-in [:posy] py)))))
+
+(defn make-stairs []
+  (ent/map->Tile {:passable true :blocks-sight false
+                  :discovered false :props {:stairs true}}))
+
+(defn place-stairs-down [tiles rooms]
+  (let [last-room (last rooms)
+        [cx cy] (room-center last-room)]
+    (assoc-in tiles [cx cy] (make-stairs))))
 
 ;;; ================================== World gen
 (defn make-pairs [rooms]
@@ -135,14 +150,14 @@
 (defn simple-world [map-size room-config]
   (let [full-map (make-map map-size)
         rooms (gen-rooms map-size room-config)
-        world-with-rooms (reduce #(carve-room %1 %2) full-map rooms)]
+        carved-map (reduce #(carve-room %1 %2) full-map rooms)]
     (letfn [(connect [world [room1 room2]] (connect-two-rooms world room1 room2))]
-      {:tiles (reduce connect world-with-rooms (make-pairs rooms))
+      {:tiles (place-stairs-down (reduce connect carved-map (make-pairs rooms)) rooms)
        :rooms rooms})))
 
 (defn empty-world []
   (let [full-map (make-map [10 10])
         rooms [(make-room 2 2 3 2) (make-room 4 4 3 3)]
-        with-room (reduce #(carve-room %1 %2) full-map rooms)]
-    {:tiles with-room
+        carved-map (reduce #(carve-room %1 %2) full-map rooms)]
+    {:tiles (place-stairs-down carved-map rooms)
      :rooms rooms}))

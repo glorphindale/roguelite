@@ -10,7 +10,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def field-size [35 35])
 (def screen-size [1500 700])
 
 (defn init-game []
@@ -41,7 +40,7 @@
       (:gameover) (do
                     (saving/delete-save init-game)
                     (if (= (:key event) :r)
-                      (game/new-game field-size) 
+                      (game/inject-player (game/simple-game)) 
                       state))
       (:use-mode) (-> state
                       (game/use-item (:key event))
@@ -55,11 +54,12 @@
         (:o) (assoc-in state [:no-fog] false)
         (:u) (assoc-in state [:state] :use-mode)
         (:d) (assoc-in state [:state] :drop-mode)
+        (:>) (game/try-descend state)
         (:S) (do
                (saving/save-game state)
                (ent/+msg state "Game saved"))
         (:p) (game/pickup state)
-        (:r) (game/new-game field-size)  ;;; Restart
+        (:r) (game/inject-player (game/simple-game))  ;;; Restart
         (case (long (:key-code event)) 
           (32 10) (game/wait-step state)
           (33 34 35 36 37 38 39 40) (process-movement state dir)
@@ -68,7 +68,7 @@
 (defn key-pressed-menu [state event]
   (if (= (:raw-key event) \newline)
     (case (long (:selected state))
-      0 (game/simple-game)
+      0 (game/inject-player (game/simple-game))
       1 (if (saving/has-save)
            (saving/load-game)
           state))
@@ -90,6 +90,7 @@
 (def tile-colors
   {:wall {true [80 80 150] false [30 30 30]}
    :floor {true [60 60 60] false [0 0 0]}
+   :stairs {true [60 60 60] false [60 60 60]}
    :player [255 255 0]
    :zombie [127 0 0]
    :rat [160 0 160]
@@ -106,6 +107,7 @@
    :corpse \,
    :item \*
    :wall \#
+   :stairs \>
    :floor \.})
 
 (defn draw-gameobject [gobject]
@@ -116,11 +118,14 @@
 
 
 (defn put-tile [tile is-lit]
-  (if (:passable tile)
-    (q/with-fill (get-in tile-colors [:floor is-lit])
-      (q/text-char (otype->symb :floor) 4 -4))
-    (q/with-fill (get-in tile-colors [:wall is-lit])
-      (q/text-char (otype->symb :wall) 0 0))))
+  (if (get-in tile [:props :stairs] false)
+    (q/with-fill (get-in tile-colors [:stairs is-lit])
+      (q/text-char (otype->symb :stairs) 4 -4))
+    (if (:passable tile)
+      (q/with-fill (get-in tile-colors [:floor is-lit])
+        (q/text-char (otype->symb :floor) 4 -4))
+      (q/with-fill (get-in tile-colors [:wall is-lit])
+        (q/text-char (otype->symb :wall) 0 0)))))
 
 (defn draw-tile [tile [tx ty] [px py] state]
    (if (and (= tx px) (= ty py))
@@ -151,7 +156,7 @@
 
 (defn mouse-to-coords [mx my]
   (let [[startx starty] field-start
-        [maxx maxy] field-size
+        [maxx maxy] game/field-size
         px (int (/ (- mx startx) tile-size))
         py (int (/ (+ tile-size (- my starty)) tile-size))]
     (if (and (>= px 0) (<= px maxx) (>= py 0) (<= py maxy))
@@ -191,7 +196,7 @@
   (q/with-translation [100 650]
     (q/text "a/w/s/d/arrows to move and attack, spacebar to wait" 0 0) 
     (q/text "'u' to use an item, 'p' to pickup an item " 0 20) 
-    (q/text "'S' to save" 0 40))
+    (q/text "'S' to save, '>' to go downstairs" 0 40))
 
   ;;; Inventory
   (q/with-translation [720 460]
@@ -205,9 +210,10 @@
     (q/with-fill [255 255 255]
       (draw-healthbar (:player state))
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
-      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40))
+      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40) 
+      (q/text (str "Level " (get-in state [:level])) 0 60))
 
-    (q/with-translation [0 70]
+    (q/with-translation [0 80]
       (q/with-fill [255 255 255]
         (case (:state state)
           (:start) (q/text (str "You see a dungeon around") 0 0)
