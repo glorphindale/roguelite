@@ -147,9 +147,11 @@
   (let [hp (get-in player [:components :defender :hp])
         max-hp (get-in player [:components :defender :max-hp])
         ratio (/ hp max-hp)
-        border (* 110 ratio)]
+        border (* 120 ratio)]
+    (q/with-fill [40 40 40]
+      (q/rect 58 -20 124 24 3))
     (q/with-fill [200 0 0]
-      (q/rect 50 -18 border 20 3)) 
+      (q/rect 60 -18 border 20 3)) 
     (q/text (str "HP: " hp "/" max-hp) 0 0)))
 
 (def field-start [100 80])
