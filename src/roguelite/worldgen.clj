@@ -61,13 +61,24 @@
     (ent/->Room start-x start-y end-x end-y)))
 
 ;;; ===================================== Object gen
+(def monsters
+  {:rat {:attacker {:attack 5}
+         :defender {:defence 1 :max-hp 15 :hp 15}
+         :sound "squeaks"
+         :movement :roam}
+   :zombie {:attacker {:attack 15}
+            :defender {:defence 5 :max-hp 70 :hp 70}
+            :sound "growls"
+            :movement :hunt}
+   :troll {:attacker {:attack 25}
+           :defender {:defence 5 :max-hp 40 :hp 40}
+           :sound "burps"
+           :movement :attack-nearby}})
+
 (defn random-monster [cx cy]
-  (let [mtype (rand-nth [:zombie :troll :rat])
-        behavior (rand-nth [:attack-nearby :roam :hunt])]
-    (ent/->GameObject cx cy mtype {:attacker {:attack (+ 1 (rand-int 2))}
-                                   :defender {:defence 1 :max-hp 3 :hp 3}
-                                   :sound :roar
-                                   :movement behavior})))
+  (let [mtype (rand-nth (keys monsters))
+        monster (ent/->GameObject cx cy mtype {})]
+    (assoc-in monster [:components] (mtype monsters))))
 
 (defn place-monster [room]
   (let [[cx cy] (room-center room)]
@@ -83,8 +94,9 @@
   (ent/->GameObject px py
                     :player
                     {:inventory [(make-item :health-potion) (make-item :dagger)]
-                     :attacker {:attack 3}
-                     :defender {:defence 1 :max-hp 10 :hp 10}}))
+                     :progression {:exp 0 :level 1}
+                     :attacker {:attack 20}
+                     :defender {:defence 5 :max-hp 100 :hp 100}}))
 
 (defn gen-scroll []
   (rand-nth [:lightning :aggro :pacify]))

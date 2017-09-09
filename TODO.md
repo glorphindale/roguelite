@@ -11,3 +11,4 @@ UI
 
 Inventory
 
+Balance

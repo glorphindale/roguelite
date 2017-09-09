@@ -10,11 +10,10 @@
 ;;;   :sound
 ;;;   :movement :roam/:attack-nearby/:hunt
 
-(defn make-a-sound [gobject]
-  (let [sound (rand-nth ["howls" "growls" "roars"])]
-    (if (> (rand-int 10) 8)
-      [gobject (str (ent/pretty-name gobject) " " sound "!")]
-      [gobject nil])))
+(defn make-a-sound [gobject sound]
+  (if (> (rand-int 10) 8)
+    [gobject (str (ent/pretty-name gobject) " " sound "!")]
+    [gobject nil]))
 
 (defn nearby-cells [[x y]]
   (for [dx [-1 0 1]
@@ -39,18 +38,18 @@
     (:attack-potion) "Rage potion"
     (:defence-potion) "Barkskin potion"
     (:dagger) "Dull dagger"
-    (:scroll) "Mysterious scroll"
+    (:scroll) "Scroll of "
     (name itype)))
 
-(defn describe-item [gobject]
-  (let [itype (get-in gobject [:components :item-props :itype])]
-    (str (itype->txt itype) (get-in gobject [:components :item-props :effect] ""))))
+(defn describe-item [item]
+  (let [itype (get-in item [:itype])]
+    (str (itype->txt itype) (name (get-in item [:effect] "")))))
 
 (defn describe-obj [gobject]
   (if (get-in gobject [:components :defender])
     (str "You see: " (ent/pretty-name gobject) "\n" (describe-defender gobject))
     (if (get-in gobject [:components :item-props])
-      (str "You see: " (describe-item gobject))
+      (str "You see: " (-> gobject :components :item-props describe-item))
       (str "You see: " (ent/pretty-name gobject)))))
 
 (defn roam [state gobject-idx]
@@ -92,7 +91,7 @@
 (defn sound-component [state gobject-idx]
   (let [gobject (nth (:objects state) gobject-idx)]
     (if-let [sound (-> gobject :components :sound)]
-      (let [[nobj msg] (make-a-sound gobject)]
+      (let [[nobj msg] (make-a-sound gobject sound)]
         (-> state
             (ent/+msg msg)))
       state)))

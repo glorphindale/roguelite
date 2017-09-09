@@ -103,3 +103,8 @@
 
 07.09.2017
     * Make game continious - player can go downstairs to a new dungeon level
+
+09.09.2017
+    * Rebalance hp/attack values
+    * Demystify scrolls
+    * Fix usability issues

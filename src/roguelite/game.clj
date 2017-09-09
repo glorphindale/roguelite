@@ -74,17 +74,17 @@
 (defn use-attack-potion [state idx]
   (-> state
       (ent/+msg "You drink, you strong.")
-      (update-in [:player :components :attacker :attack] inc)))
+      (update-in [:player :components :attacker :attack] #(+ % 3))))
 
 (defn use-health-potion [state idx]
   (-> state
       (ent/+msg "You chug a health potion.")
-      (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 3)))))
+      (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 30)))))
 
 (defn use-defence-potion [state idx]
   (-> state
       (ent/+msg "Barkskin potion tastes bad.")
-      (update-in [:player :components :defender :defence] inc)))
+      (update-in [:player :components :defender :defence] #(+ % 3))))
 
 (defn- extract-pos [[_ gobject]]
   [(:posx gobject) (:posy gobject)])
@@ -96,7 +96,7 @@
         target (first visible-monsters)]
     (if target
       (let [[gobj-idx defender] target
-            [ndefender message] (apply-damage (:player state) defender 5)]  ;; HARDCODE FOR DAMAGE
+            [ndefender message] (apply-damage (:player state) defender 45)]  ;; HARDCODE FOR DAMAGE
         (-> state
             (ent/+msg (str "Lightning strikes the " (ent/pretty-name defender)))
             (ent/+msg message)
@@ -172,7 +172,7 @@
             item-to-add (-> item :components :item-props)]
         (-> state
             (update-in [:objects] remove-nth item-idx)
-            (ent/+msg (str "You pickup a " (comps/itype->txt (:itype item-to-add))))
+            (ent/+msg (str "You pickup a " (comps/describe-item item-to-add)))
             (update-in [:player :components :inventory] conj item-to-add)))
       (ent/+msg state "Nothing to pickup"))))
 
