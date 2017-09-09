@@ -138,7 +138,7 @@
 
 (defn use-item [state key-pressed]
   (try
-    (let [idx (Integer/parseInt (name key-pressed)) 
+    (let [idx (dec (Integer/parseInt (name key-pressed))) 
           item (get-in state [:player :components :inventory idx])
           changed-state (case (:itype item)
                           (:health-potion) (use-health-potion state idx)

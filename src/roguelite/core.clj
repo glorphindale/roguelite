@@ -203,7 +203,7 @@
   ;;; Inventory
   (q/with-translation [720 460]
     (let [inventory (clojure.string/join "\n" 
-                                         (map #(str (first %) " " (-> % second :itype comps/itype->txt))
+                                         (map #(str (inc (first %)) " " (-> % second comps/describe-item))
                                               (map-indexed vector (get-in state [:player :components :inventory]))))]
       (q/text "Inventory" 0 0)
       (q/text inventory 10 20)))

@@ -10,6 +10,4 @@ UI
     Add mouse targeting - unclear how to implement properly
 
 Inventory
-    * Items should start at 1
-
 
