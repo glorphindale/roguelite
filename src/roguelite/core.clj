@@ -143,15 +143,25 @@
         (q/with-translation [(* tile-size x) (* tile-size y)]
           (draw-tile tile [x y] [px py] state))))))
 
+(defn- draw-xpbar [player]
+  (let [{:keys [level exp max-exp]} (get-in player [:components :progression])
+        ratio (/ exp max-exp)
+        border (* 120 ratio)]
+    (q/with-fill [40 40 40]
+      (q/rect 58 -18 124 22 3))
+    (q/with-fill [0 200 0]
+      (q/rect 60 -16 border 18 3))
+    (q/text (str "XP: " exp "/" max-exp) 0 0)))
+
 (defn- draw-healthbar [player]
   (let [hp (get-in player [:components :defender :hp])
         max-hp (get-in player [:components :defender :max-hp])
         ratio (/ hp max-hp)
         border (* 120 ratio)]
     (q/with-fill [40 40 40]
-      (q/rect 58 -20 124 24 3))
+      (q/rect 58 -18 124 22 3))
     (q/with-fill [200 0 0]
-      (q/rect 60 -18 border 20 3)) 
+      (q/rect 60 -16 border 18 3)) 
     (q/text (str "HP: " hp "/" max-hp) 0 0)))
 
 (def field-start [100 80])
@@ -210,13 +220,16 @@
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]
-      (draw-healthbar (:player state))
-      (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 20)
-      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 40) 
-      (q/text (str "Level " (get-in state [:level])) 0 60))
+      (q/with-translation [0 0]
+        (draw-healthbar (:player state)))
+      (q/with-translation [0 20]
+       (draw-xpbar (:player state)))
+      (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 40)
+      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 60) 
+      (q/text (str "Level " (get-in state [:level])) 0 80))
 
-    (q/with-translation [0 80]
-      (q/with-fill [255 255 255]
+    (q/with-translation [0 100]
+      (q/with-fill [255 200 100]
         (case (:state state)
           (:start) (q/text (str "You see a dungeon around") 0 0)
           (:waiting) (q/text (str "You wait") 0 0)
@@ -228,7 +241,7 @@
           (q/text (str "") 0 0)))
       (q/with-fill [255 255 0]
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
-          (q/text (str (clojure.string/join "\n" (take-last 20 messages))) 0 32))))))
+          (q/text (str (clojure.string/join "\n" (take-last 18 messages))) 0 32))))))
 
 (defn draw-menu [state]
   (q/background 0)

@@ -12,3 +12,4 @@ UI
 Inventory
 
 Balance
+    * EXP gain formula is bad

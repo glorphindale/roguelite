@@ -19,12 +19,23 @@
 (defn combat-round [attacker defender]
   (let [damage (max 0
                     (- (get-in attacker [:components :attacker :attack])
-                       (get-in defender [:components :defender :defence])))]
-    (if (= damage 0)
-      [attacker defender (str (ent/pretty-name defender) " is unamazed by strike.")]
-      (let [[ndefender message] (apply-damage attacker defender damage)]
+                       (get-in defender [:components :defender :defence])))
+        exp (get-in defender [:components :defender :max-hp] 0)]  ;; TODO Better formula for EXP
+    (let [[ndefender message] (apply-damage attacker defender damage)]
+      (if (and (= :player (:otype attacker)) (= :corpse (:otype ndefender)))
+        [(update-in attacker [:components :progression :exp] #(+ % exp)) ndefender message]
         [attacker ndefender message]))))
 
+(defn levelup [player]
+  (let [{:keys [level exp max-exp ]} (get-in player [:components :progression])]
+    (when (>= exp max-exp)
+      (-> player
+          (update-in [:components :progression :max-exp] #(int (* % 1.5))) 
+          (assoc-in [:components :progression :level] inc) 
+          (update-in [:components :defender :max-hp] #(int (* % 1.3))) 
+          (update-in [:components :defender :defence] #(+ % 2)) 
+          (update-in [:components :attacker :attack] #(int (* % 1.5))) 
+          (assoc-in [:components :progression :exp] 0)))))
 
 (defn process-gobject [state gobject-idx]
   (-> state
@@ -43,11 +54,17 @@
 (defn attack [state gobject-idx]
   (let [attacker (:player state)
         defender (get-in state [:objects gobject-idx])
-        [nattacker ndefender message] (combat-round attacker defender)] 
-    (-> state
-        (assoc-in [:player] nattacker)
-        (assoc-in [:objects gobject-idx] ndefender)
-        (ent/+msg message))))
+        [nattacker ndefender message] (combat-round attacker defender) 
+        nstate (-> state
+                   (assoc-in [:player] nattacker)
+                   (assoc-in [:objects gobject-idx] ndefender)
+                   (ent/+msg message))
+        leveled-player (levelup nattacker)]
+    (if leveled-player
+      (-> nstate
+          (assoc-in [:player] leveled-player)
+          (ent/+msg "You've gained a level!"))
+      nstate)))
 
 (defn wait-step [state]
     (-> state

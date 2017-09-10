@@ -94,7 +94,7 @@
   (ent/->GameObject px py
                     :player
                     {:inventory [(make-item :health-potion) (make-item :dagger)]
-                     :progression {:exp 0 :level 1}
+                     :progression {:exp 0 :max-exp 30 :level 1}
                      :attacker {:attack 20}
                      :defender {:defence 5 :max-hp 100 :hp 100}}))
 

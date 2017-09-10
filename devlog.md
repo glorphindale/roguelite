@@ -108,3 +108,6 @@
     * Rebalance hp/attack values
     * Demystify scrolls
     * Fix usability issues
+
+10.09.2017
+    * Add character progression
