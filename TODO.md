@@ -7,7 +7,8 @@ Entities
     * using posx/posy for GameObject is inconvenient, should be abstrated to 'position'
 
 UI
-    Add mouse targeting - unclear how to implement properly
+    * Add mouse targeting for spells - unclear how to implement properly
+    * Add visual feedback for combat - blood splatters, lightning effects
 
 Inventory
 
