@@ -11,7 +11,7 @@
 ;;;   :movement :roam/:attack-nearby/:hunt
 
 (defn make-a-sound [gobject sound]
-  (if (> (rand-int 16) 13)
+  (if (> (rand-int 16) 14)
     [gobject (str (ent/pretty-name gobject) " " sound "!")]
     [gobject nil]))
 
