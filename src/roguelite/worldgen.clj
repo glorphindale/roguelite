@@ -84,7 +84,7 @@
   (let [[cx cy] (room-center room)]
     (random-monster cx cy)))
 
-(defn create-monsters [rooms]
+(defn create-monsters [rooms level]
   (vec (map place-monster rooms)))
 
 (defn make-item [itype]
@@ -110,7 +110,7 @@
       (:scroll) (assoc-in item [:components :item-props :effect] (gen-scroll))
       item)))
 
-(defn place-items [rooms]
+(defn place-items [rooms level]
   (map place-item rooms))
 
 (defn place-player
@@ -159,7 +159,7 @@
           (carve-v-tunnel cx1 cy1 cy2)
           (carve-h-tunnel cx1 cx2 cy2)))))
 
-(defn simple-world [map-size room-config]
+(defn regular-floor [map-size room-config]
   (let [full-map (make-map map-size)
         rooms (gen-rooms map-size room-config)
         carved-map (reduce #(carve-room %1 %2) full-map rooms)]
@@ -167,7 +167,7 @@
       {:tiles (place-stairs-down (reduce connect carved-map (make-pairs rooms)) rooms)
        :rooms rooms})))
 
-(defn empty-world []
+(defn starting-floor []
   (let [full-map (make-map [10 10])
         rooms [(make-room 2 2 3 2) (make-room 4 4 3 3)]
         carved-map (reduce #(carve-room %1 %2) full-map rooms)]

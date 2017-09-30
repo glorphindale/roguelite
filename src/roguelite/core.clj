@@ -40,7 +40,7 @@
       (:gameover) (do
                     (saving/delete-save init-game)
                     (if (= (:key event) :r)
-                      (game/inject-player (game/simple-game))
+                      (game/inject-player (game/new-game game/field-size))
                       state))
       (:use-mode) (-> state
                       (game/use-item (:key event))
@@ -59,7 +59,7 @@
                (saving/save-game state)
                (ent/+msg state "Game saved"))
         (:p) (game/pickup state)
-        (:r) (game/inject-player (game/simple-game))  ;;; Restart
+        (:r) (game/inject-player (game/new-game game/field-size))  ;;; Restart
         (case (long (:key-code event))
           (32 10) (game/wait-step state)
           (33 34 35 36 37 38 39 40) (process-movement state dir)
@@ -68,12 +68,12 @@
 (defn key-pressed-menu [state event]
   (if (= (:raw-key event) \newline)
     (case (long (:selected state))
-      0 (game/inject-player (game/simple-game))
+      0 (game/inject-player (game/new-game game/field-size))
       1 (if (saving/has-save)
            (saving/load-game)
           state))
     (case (:key event)
-      (:down) (update-in state [:selected] #(min 1 (inc %))) 
+      (:down) (update-in state [:selected] #(min 1 (inc %)))
       (:up)   (update-in state [:selected] #(max 0 (dec %)))
       state)))
 
@@ -256,7 +256,7 @@
       (q/with-fill [200 0 0]
         (q/text "New game" 0 0)
         (if (saving/has-save)
-          (q/text "Load previous game" 0 20) 
+          (q/text "Load previous game" 0 20)
           (q/with-fill [100 100 100]
             (q/text "Load previous game" 0 20)))
         (q/text "->" -40 marker-y)))))

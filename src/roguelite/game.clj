@@ -204,27 +204,6 @@
                                   (:world state)))
         (update-in [:world] #(fov/update-discovered (:visibility state) %)))))
 
-;; Game gen
-(defn new-game [map-size]
-  (let [{:keys [rooms tiles]} (wgen/simple-world map-size wgen/room-config)
-        world {:objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
-               :world tiles
-               :rooms rooms
-               :messages []
-               :level 1
-               :state :start}]
-    world))
-
-(defn simple-game []
-  (let [{:keys [rooms tiles]} (wgen/empty-world)
-        world {:objects (vec (concat (wgen/create-monsters (rest rooms)) (wgen/place-items rooms)))
-               :world tiles
-               :rooms rooms
-               :messages []
-               :level 1
-               :state :start}]
-    world))
-
 (defn inject-player
   ([world]
    (let [player (wgen/place-player (first (:rooms world)))
@@ -235,15 +214,37 @@
          nworld (assoc-in world [:player] player)]
      (refresh-visibility (assoc-in nworld [:visibility] [])))))
 
+(defn make-floor [map-size level]
+  (if (> level 1)
+    (wgen/regular-floor map-size wgen/room-config)  
+    (wgen/starting-floor)))
+
+(defn make-dungeon-level [map-size level]
+  (let [{:keys [rooms tiles]} (make-floor map-size level)
+        dungeon {:objects (vec (concat (wgen/create-monsters (rest rooms) level)
+                                       (wgen/place-items rooms level)))
+                 :world tiles
+                 :rooms rooms}]
+    dungeon))
+
 (defn try-descend [state]
   (let [[px py] (ent/get-pos (:player state))]
     (if (get-in state [:world px py :props :stairs])
-      (let [next-level (new-game field-size)
+      (let [next-level (inc (:level state))
+            {:keys [objects world rooms]} (make-dungeon-level field-size next-level)  ;; field-size should be passed inside or be stored in the state
             player (:player state)]
         (-> state
-            (assoc-in [:world] (:world next-level))
-            (assoc-in [:objects] (:objects next-level))
-            (assoc-in [:rooms] (:rooms next-level))
-            (update-in [:level] inc)
+            (assoc-in [:objects] objects)
+            (assoc-in [:world] world)
+            (assoc-in [:rooms] rooms)
+            (assoc-in [:level] next-level)
             (inject-player player)))
       (ent/+msg state "You need stairs to descend"))))
+
+;; Game gen
+(defn new-game [map-size]
+  (let [dungeon (make-dungeon-level map-size 1)
+        world {:messages []
+               :level 1
+               :state :start}]
+    (merge world dungeon)))
