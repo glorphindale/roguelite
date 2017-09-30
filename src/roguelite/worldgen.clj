@@ -1,5 +1,6 @@
 (ns roguelite.worldgen
   (:require [roguelite.entities :as ent]
+            [roguelite.utils :as utils]
             [roguelite.components :as comps]))
 
 ;;; ===================================== Roomgen
@@ -75,17 +76,27 @@
            :sound "burps"
            :movement :attack-nearby}})
 
-(defn random-monster [cx cy]
-  (let [mtype (rand-nth (keys monsters))
-        monster (ent/->GameObject cx cy mtype {})]
+(def monsters-table 
+  {1 {:rat 1}
+   2 {:rat 3 :troll 1}
+   3 {:rat 1 :troll 5 :zombie 2}
+   4 {:troll 5 :zombie 5}
+   5 {:troll 1 :zombie 5}  
+   6 {:zombie 1}})
+
+(defn random-monster [mtype cx cy]
+  (let [monster (ent/->GameObject cx cy mtype {})]
     (assoc-in monster [:components] (mtype monsters))))
 
-(defn place-monster [room]
-  (let [[cx cy] (room-center room)]
-    (random-monster cx cy)))
+(defn place-monster [available-monsters room]
+  (let [[cx cy] (room-center room)
+        mtype (utils/pick-one available-monsters)]
+    (random-monster mtype cx cy)))
 
 (defn create-monsters [rooms level]
-  (vec (map place-monster rooms)))
+  (let [possible-mlevel (min level (->> monsters-table keys (apply max)))
+        available-monsters (get monsters-table possible-mlevel)]
+    (vec (map #(place-monster available-monsters %) rooms))))
 
 (defn make-item [itype]
   {:itype itype})

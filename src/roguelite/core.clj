@@ -90,7 +90,7 @@
 (def tile-colors
   {:wall {true [80 80 150] false [30 30 30]}
    :floor {true [60 60 60] false [0 0 0]}
-   :stairs {true [60 60 60] false [60 60 60]}
+   :stairs {true [255 255 255] false [255 255 255]}
    :player [255 255 0]
    :zombie [127 0 0]
    :rat [160 0 160]
@@ -161,7 +161,7 @@
     (q/with-fill [40 40 40]
       (q/rect 58 -18 124 22 3))
     (q/with-fill [200 0 0]
-      (q/rect 60 -16 border 18 3)) 
+      (q/rect 60 -16 border 18 3))
     (q/text (str "HP: " hp "/" max-hp) 0 0)))
 
 (def field-start [100 80])
