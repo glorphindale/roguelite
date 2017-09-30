@@ -4,7 +4,7 @@
             [roguelite.entities :as ent]
             [roguelite.components :as comps]
             [roguelite.movement :as move]
-            [roguelite.game :as game] 
+            [roguelite.game :as game]
             [roguelite.saving :as saving])
   (:import [java.awt.event KeyEvent]))
 
@@ -40,11 +40,11 @@
       (:gameover) (do
                     (saving/delete-save init-game)
                     (if (= (:key event) :r)
-                      (game/inject-player (game/simple-game)) 
+                      (game/inject-player (game/simple-game))
                       state))
       (:use-mode) (-> state
                       (game/use-item (:key event))
-                      (assoc-in [:state] :used-item)) 
+                      (assoc-in [:state] :used-item))
       (:drop-mode) (-> state
                        (game/drop-item (:key event))
                        (assoc-in [:state] :dropped-item))
@@ -60,7 +60,7 @@
                (ent/+msg state "Game saved"))
         (:p) (game/pickup state)
         (:r) (game/inject-player (game/simple-game))  ;;; Restart
-        (case (long (:key-code event)) 
+        (case (long (:key-code event))
           (32 10) (game/wait-step state)
           (33 34 35 36 37 38 39 40) (process-movement state dir)
           state)))))
@@ -181,7 +181,7 @@
   ;;; Mouse look
   (when-let [[x y] (mouse-to-coords (q/mouse-x) (q/mouse-y))]
     (when (some #{[x y]} (:visibility state))
-      (do 
+      (do
         (q/with-fill [100 100 100]
           (q/with-translation field-start
             (q/rect (* x tile-size) (+ (- tile-size) (* y tile-size)) tile-size tile-size)))
@@ -207,13 +207,13 @@
         (draw-gameobject player))))
 
   (q/with-translation [100 650]
-    (q/text "a/w/s/d/arrows to move and attack, spacebar to wait" 0 0) 
-    (q/text "'u' to use an item, 'p' to pickup an item " 0 20) 
+    (q/text "a/w/s/d/arrows to move and attack, spacebar to wait" 0 0)
+    (q/text "'u' to use an item, 'p' to pickup an item " 0 20)
     (q/text "'S' to save, '>' to go downstairs" 0 40))
 
   ;;; Inventory
   (q/with-translation [720 460]
-    (let [inventory (clojure.string/join "\n" 
+    (let [inventory (clojure.string/join "\n"
                                          (map #(str (inc (first %)) " " (-> % second comps/describe-item))
                                               (map-indexed vector (get-in state [:player :components :inventory]))))]
       (q/text "Inventory" 0 0)
@@ -226,7 +226,7 @@
       (q/with-translation [0 20]
        (draw-xpbar (:player state)))
       (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 40)
-      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 60) 
+      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 60)
       (q/text (str "Level " (get-in state [:level])) 0 80))
 
     (q/with-translation [0 100]

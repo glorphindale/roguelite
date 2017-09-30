@@ -1,6 +1,6 @@
 (ns roguelite.saving
-  (require [clojure.edn :as edn]
-           [roguelite.entities :as ent]))
+  (:require [clojure.edn :as edn]
+            [roguelite.entities :as ent]))
 
 (def fname "savefile.clj")
 
