@@ -90,16 +90,16 @@
 
 (defn make-monster-tougher [monster level]
   (-> monster
-      (update-in [:components :defender :hp] #(int (* 1.4 %)))
-      (update-in [:components :defender :max-hp] #(int (* 1.4 %)))
-      (update-in [:components :defender :defence] #(+ 3 %))
-      (update-in [:components :attacker :attack] #(int (* 1.6 %)))))
+      (update-in [:components :defender :hp] #(int (+ % (* 1.6 level))))
+      (update-in [:components :defender :max-hp] #(int (+ % (* 1.6 level))))
+      (update-in [:components :defender :defence] #(+ % (* 7 level)))
+      (update-in [:components :attacker :attack] #(int (+ % (* 1.6 level))))))
 
 (defn place-monster [available-monsters level room]
   (let [[cx cy] (room-center room)
         mtype (utils/pick-one available-monsters)
         monster (random-monster mtype cx cy)]
-    (make-monster-tougher monster level)))
+    (make-monster-tougher monster (dec level))))
 
 (defn create-monsters [rooms level]
   (let [possible-mlevel (min level (->> monsters-table keys (apply max)))
@@ -108,34 +108,43 @@
 
 ;; ============================= Items
 (def items-table
-  {1 {:attack-potion 1 :health-potion 1}
-   2 {:attack-potion 1 :health-potion 2 :defence-potion 1}
-   3 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}
-   4 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}
-   5 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}
-   6 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}})
+  {1 {:weapon 1}
+   2 {:health-potion 2 :defence-potion 1 :weapon 1}
+   3 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1 :armor 1}
+   4 {:attack-potion 1 :health-potion 2 :scroll 1 :armor 1}
+   5 {:attack-potion 1 :health-potion 2 :scroll 1 :weapon 1}
+   6 {:attack-potion 1 :health-potion 2 :scroll 1 :weapon 1}})
 
-(defn make-item [itype]
-  {:itype itype})
+(defn make-item [itype level]
+  (let [item {:itype itype}]
+    (case itype
+      (:armor) (merge item {:variant :chainmail :defence (* level 5)})
+      (:weapon) (merge item {:variant :dagger :attack (* level 10)})
+      (:scroll) (merge item {:effect (rand-nth [:lightning :aggro :pacify])})
+      item)))
 
-(defn gen-scroll []
-  (rand-nth [:lightning :aggro :pacify]))
-
-(defn place-item [available-items {:keys [x1 x2 y1 y2]}]
+(defn place-item [available-items level {:keys [x1 x2 y1 y2]}]
   (let [px (+ x1 (rand-int (- x2 x1)))
         py (+ y1 (rand-int (- y2 y1)))
         item-type (utils/pick-one available-items)
-        item (ent/->GameObject px py :item {:passable true :item-props {:itype item-type}})]
-    (case item-type
-      (:scroll) (assoc-in item [:components :item-props :effect] (gen-scroll))
-      item)))
+        item (ent/->GameObject px py :item {:passable true
+                                            :item-props (make-item item-type level)})]
+    item))
 
 (defn place-items [rooms level]
   (let [possible-ilevel (min level (->> items-table keys (apply max)))
         available-items (get items-table possible-ilevel)]
-    (vec (map #(place-item available-items %) rooms))))
+    (vec (map #(place-item available-items level %) rooms))))
 
 ;; =============== Player
+(defn create-player [px py]
+  (ent/->GameObject px py
+                    :player
+                    {:inventory [(make-item :health-potion 1)]
+                     :progression {:exp 0 :max-exp 30 :level 1}
+                     :attacker {:attack 0}
+                     :defender {:defence 0 :max-hp 100 :hp 100}}))
+
 (defn place-player
   ([room]
    (let [player (create-player 0 0)]
@@ -146,18 +155,10 @@
          (assoc-in [:posx] px)
          (assoc-in [:posy] py)))))
 
-(defn create-player [px py]
-  (ent/->GameObject px py
-                    :player
-                    {:inventory [(make-item :health-potion) (make-item :dagger)]
-                     :progression {:exp 0 :max-exp 30 :level 1}
-                     :attacker {:attack 20}
-                     :defender {:defence 5 :max-hp 100 :hp 100}}))
-
 ;;; ================================== World gen
 (defn make-stairs []
   (ent/map->Tile {:passable true :blocks-sight false
-                  :discovered false :props {:stairs true}})
+                  :discovered false :props {:stairs true}}))
 
 (defn place-stairs-down [tiles rooms]
   (let [last-room (last rooms)

@@ -111,10 +111,13 @@
    :floor \.})
 
 (defn draw-gameobject [gobject]
-  (q/with-fill (get-in tile-colors [(:otype gobject)] [255 255 255])
-    (let [nx (* tile-size (:posx gobject))
-          ny (* tile-size (:posy gobject))]
-      (q/text-char (-> gobject :otype otype->symb) nx ny))))
+  (try
+    (q/with-fill (get-in tile-colors [(:otype gobject)] [255 255 255])
+      (let [nx (* tile-size (:posx gobject))
+            ny (* tile-size (:posy gobject))]
+        (q/text-char (-> gobject :otype otype->symb) nx ny)))
+    (catch Exception e (q/text (str "Exception: " e) 20 20))  
+    ))
 
 
 (defn put-tile [tile is-lit]
@@ -225,8 +228,8 @@
         (draw-healthbar (:player state)))
       (q/with-translation [0 20]
        (draw-xpbar (:player state)))
-      (q/text (str "Attack: " (get-in state [:player :components :attacker :attack])) 0 40)
-      (q/text (str "Defence: " (get-in state [:player :components :defender :defence])) 0 60)
+      (q/text (str "Attack: " (game/get-attack (:player state))) 0 40)
+      (q/text (str "Defence: " (game/get-defence (:player state))) 0 60)
       (q/text (str "Level " (get-in state [:level])) 0 80))
 
     (q/with-translation [0 100]

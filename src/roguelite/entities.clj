@@ -4,6 +4,9 @@
 (defrecord Tile [passable blocks-sight discovered props])
 (defrecord GameObject [posx posy otype components])
 
+(defn pretty-value [value]
+  (-> value name clojure.string/capitalize))
+
 (defn pretty-name [gobject]
   (-> gobject :otype name clojure.string/capitalize))
 

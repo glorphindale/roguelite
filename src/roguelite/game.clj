@@ -16,10 +16,22 @@
       [(ent/->GameObject (:posx defender) (:posy defender) :corpse {:passable true})
        (str (ent/pretty-name attacker) " slays " (ent/pretty-name defender) "!")]))) 
 
+(defn get-attack [gobject]
+  (let [base-attack (get-in gobject [:components :attacker :attack])
+        item-attack (apply + (map #(get-in % [:attack] 0)
+                                  (get-in gobject [:components :inventory] [])))]
+    (+ base-attack item-attack)))
+
+(defn get-defence [gobject]
+  (let [base-defence (get-in gobject [:components :defender :defence])
+        item-defence (apply + (map #(get-in % [:defence] 0)
+                                   (get-in gobject [:components :inventory] [])))]
+    (+ base-defence item-defence)))
+
 (defn combat-round [attacker defender]
   (let [damage (max 0
-                    (- (get-in attacker [:components :attacker :attack])
-                       (get-in defender [:components :defender :defence])))
+                    (- (get-attack attacker)
+                       (get-defence defender)))
         exp (int (get-in defender [:components :defender :max-hp] 0))]  ;; TODO Better formula for EXP
     (let [[ndefender message] (apply-damage attacker defender damage)]
       (if (and (= :player (:otype attacker)) (= :corpse (:otype ndefender)))
@@ -36,7 +48,7 @@
           (assoc-in [:components :defender :max-hp] new-hp) 
           (assoc-in [:components :defender :hp] new-hp) 
           (update-in [:components :defender :defence] #(+ % 2)) 
-          (update-in [:components :attacker :attack] #(int (* % 1.2))) 
+          (update-in [:components :attacker :attack] #(+ % 3)) 
           (assoc-in [:components :progression :exp] 0)))))
 
 (defn process-gobject [state gobject-idx]

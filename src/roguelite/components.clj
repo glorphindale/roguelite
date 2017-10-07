@@ -25,7 +25,8 @@
 
 (defn describe-defender [gobject]
   (when-let [defender (get-in gobject [:components :defender])]
-    (let [ratio (/ (:hp defender) (:max-hp defender))]
+    (let [ratio (/ (:hp defender) (:max-hp defender))
+          defence (get-in gobject [:components :defender :defence])]
       (cond
        (< ratio 0.3) "It is severly injured."
        (< ratio 0.7) "It is injured."
@@ -37,13 +38,16 @@
     (:health-potion) "Health potion"
     (:attack-potion) "Rage potion"
     (:defence-potion) "Barkskin potion"
-    (:dagger) "Dull dagger"
+    (:weapon) "Dull dagger"
     (:scroll) "Scroll of "
     (name itype)))
 
 (defn describe-item [item]
-  (let [itype (get-in item [:itype])]
-    (str (itype->txt itype) (name (get-in item [:effect] "")))))
+  (let [itype (get-in item [:itype] :junk)]
+    (case itype
+      (:armor) (str (ent/pretty-value (:variant item)) " +" (:defence item)) 
+      (:weapon) (str (ent/pretty-value (:variant item)) " +" (:attack item))
+      (str (itype->txt itype) (name (get-in item [:effect] ""))))))
 
 (defn describe-obj [gobject]
   (if (get-in gobject [:components :defender])
