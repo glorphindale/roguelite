@@ -111,3 +111,10 @@
 
 10.09.2017
     * Add character progression
+
+15-30.09.2017
+    * Refactor code
+    * Make monsters harder the deeper the player descends
+
+07.10.2017
+    * Refactor item generation

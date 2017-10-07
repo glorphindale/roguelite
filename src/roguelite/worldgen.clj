@@ -76,12 +76,12 @@
            :sound "burps"
            :movement :attack-nearby}})
 
-(def monsters-table 
+(def monsters-table
   {1 {:rat 1}
    2 {:rat 3 :troll 1}
    3 {:rat 1 :troll 5 :zombie 2}
    4 {:troll 5 :zombie 5}
-   5 {:troll 1 :zombie 5}  
+   5 {:troll 1 :zombie 5}
    6 {:zombie 1}})
 
 (defn random-monster [mtype cx cy]
@@ -98,32 +98,36 @@
         available-monsters (get monsters-table possible-mlevel)]
     (vec (map #(place-monster available-monsters %) rooms))))
 
+;; ============================= Items
+(def items-table
+  {1 {:attack-potion 1 :health-potion 1}
+   2 {:attack-potion 1 :health-potion 2 :defence-potion 1}
+   3 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}
+   4 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}
+   5 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}
+   6 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1}})
+
 (defn make-item [itype]
   {:itype itype})
-
-(defn create-player [px py]
-  (ent/->GameObject px py
-                    :player
-                    {:inventory [(make-item :health-potion) (make-item :dagger)]
-                     :progression {:exp 0 :max-exp 30 :level 1}
-                     :attacker {:attack 20}
-                     :defender {:defence 5 :max-hp 100 :hp 100}}))
 
 (defn gen-scroll []
   (rand-nth [:lightning :aggro :pacify]))
 
-(defn place-item [{:keys [x1 x2 y1 y2]}]
+(defn place-item [available-items {:keys [x1 x2 y1 y2]}]
   (let [px (+ x1 (rand-int (- x2 x1)))
         py (+ y1 (rand-int (- y2 y1)))
-        item-type (rand-nth [:health-potion :health-potion :scroll :attack-potion :defence-potion])
+        item-type (utils/pick-one available-items)
         item (ent/->GameObject px py :item {:passable true :item-props {:itype item-type}})]
     (case item-type
       (:scroll) (assoc-in item [:components :item-props :effect] (gen-scroll))
       item)))
 
 (defn place-items [rooms level]
-  (map place-item rooms))
+  (let [possible-ilevel (min level (->> items-table keys (apply max)))
+        available-items (get items-table possible-ilevel)]
+    (vec (map #(place-item available-items %) rooms))))
 
+;; =============== Player
 (defn place-player
   ([room]
    (let [player (create-player 0 0)]
@@ -134,16 +138,24 @@
          (assoc-in [:posx] px)
          (assoc-in [:posy] py)))))
 
+(defn create-player [px py]
+  (ent/->GameObject px py
+                    :player
+                    {:inventory [(make-item :health-potion) (make-item :dagger)]
+                     :progression {:exp 0 :max-exp 30 :level 1}
+                     :attacker {:attack 20}
+                     :defender {:defence 5 :max-hp 100 :hp 100}}))
+
+;;; ================================== World gen
 (defn make-stairs []
   (ent/map->Tile {:passable true :blocks-sight false
-                  :discovered false :props {:stairs true}}))
+                  :discovered false :props {:stairs true}})
 
 (defn place-stairs-down [tiles rooms]
   (let [last-room (last rooms)
         [cx cy] (room-center last-room)]
     (assoc-in tiles [cx cy] (make-stairs))))
 
-;;; ================================== World gen
 (defn make-pairs [rooms]
   (partition 2 (interleave rooms (rest rooms))))
 

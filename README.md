@@ -8,7 +8,7 @@ Attempt to make a roguelike in Clojure by following /r/roguelikedev tutorial: ht
 
 Use arrow keys to move, 'r' to start a new level, 'p' to pickup an item, 'u' to use an item.
 
-![Current look](https://github.com/glorphindale/roguelite/blob/master/docs/screenshots/state_30_09_17.png?raw=true)
+![Current look](https://github.com/glorphindale/roguelite/blob/master/docs/screenshots/state_30_09_2017.png?raw=true)
 
 ## Notes
 
