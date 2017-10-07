@@ -88,15 +88,23 @@
   (let [monster (ent/->GameObject cx cy mtype {})]
     (assoc-in monster [:components] (mtype monsters))))
 
-(defn place-monster [available-monsters room]
+(defn make-monster-tougher [monster level]
+  (-> monster
+      (update-in [:components :defender :hp] #(int (* 1.4 %)))
+      (update-in [:components :defender :max-hp] #(int (* 1.4 %)))
+      (update-in [:components :defender :defence] #(+ 3 %))
+      (update-in [:components :attacker :attack] #(int (* 1.6 %)))))
+
+(defn place-monster [available-monsters level room]
   (let [[cx cy] (room-center room)
-        mtype (utils/pick-one available-monsters)]
-    (random-monster mtype cx cy)))
+        mtype (utils/pick-one available-monsters)
+        monster (random-monster mtype cx cy)]
+    (make-monster-tougher monster level)))
 
 (defn create-monsters [rooms level]
   (let [possible-mlevel (min level (->> monsters-table keys (apply max)))
         available-monsters (get monsters-table possible-mlevel)]
-    (vec (map #(place-monster available-monsters %) rooms))))
+    (vec (map #(place-monster available-monsters level %) rooms))))
 
 ;; ============================= Items
 (def items-table

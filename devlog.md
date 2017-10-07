@@ -118,3 +118,5 @@
 
 07.10.2017
     * Refactor item generation
+    * Make monsters increase in stats
+    * Rebalance level progression
