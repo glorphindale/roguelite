@@ -16,16 +16,18 @@
       [(ent/->GameObject (:posx defender) (:posy defender) :corpse {:passable true})
        (str (ent/pretty-name attacker) " slays " (ent/pretty-name defender) "!")]))) 
 
+(defn- equipped-items [gobject]
+  (let [items (get-in gobject [:components :inventory] [])]
+    (filter #(get % :equipped false) items)))
+
 (defn get-attack [gobject]
   (let [base-attack (get-in gobject [:components :attacker :attack])
-        item-attack (apply + (map #(get-in % [:attack] 0)
-                                  (get-in gobject [:components :inventory] [])))]
+        item-attack (apply + (map #(get-in % [:attack] 0) (equipped-items gobject)))]
     (+ base-attack item-attack)))
 
 (defn get-defence [gobject]
   (let [base-defence (get-in gobject [:components :defender :defence])
-        item-defence (apply + (map #(get-in % [:defence] 0)
-                                   (get-in gobject [:components :inventory] [])))]
+        item-defence (apply + (map #(get-in % [:defence] 0) (equipped-items gobject)))]
     (+ base-defence item-defence)))
 
 (defn combat-round [attacker defender]
@@ -102,19 +104,25 @@
 (defn- remove-nth [coll pos]
   (vec (concat (subvec coll 0 pos) (subvec coll (inc pos)))))
 
+(defn- remove-item [state idx]
+  (update-in state [:player :components :inventory] remove-nth idx))
+
 (defn use-attack-potion [state idx]
   (-> state
       (ent/+msg "You drink, you strong.")
+      (remove-item idx)
       (update-in [:player :components :attacker :attack] #(+ % 3))))
 
 (defn use-health-potion [state idx]
   (-> state
       (ent/+msg "You chug a health potion.")
+      (remove-item idx)
       (update-in [:player :components :defender :hp] #(min (get-in state [:player :components :defender :max-hp]) (+ % 30)))))
 
 (defn use-defence-potion [state idx]
   (-> state
       (ent/+msg "Barkskin potion tastes bad.")
+      (remove-item idx)
       (update-in [:player :components :defender :defence] #(+ % 3))))
 
 (defn- extract-pos [[_ gobject]]
@@ -157,29 +165,33 @@
       (ent/+msg "Suddenly monsters seem very angry")
       (update-in [:objects] rage)))
 
+
 (defn use-scroll [state item idx]
   (try
-    (let [effect (get-in item [:effect])]
-      (case effect
-        (:lightning) (use-lightning-scroll state idx)
-        (:aggro) (use-rage-scroll state idx)
-        (:pacify) (use-pacify-scroll state idx)
-        (ent/+msg state (str "Effect " effect))))
+    (let [effect (get-in item [:effect])
+          changed-state (case effect
+                          (:lightning) (use-lightning-scroll state idx)
+                          (:aggro) (use-rage-scroll state idx)
+                          (:pacify) (use-pacify-scroll state idx)
+                          (ent/+msg state (str "Effect " effect)))]
+      (remove-item changed-state idx))
     (catch Exception e (ent/+msg state e))))
 
-(defn use-item [state key-pressed]
-  (try
-    (let [idx (dec (Integer/parseInt (name key-pressed))) 
-          item (get-in state [:player :components :inventory idx])
-          changed-state (case (:itype item)
-                          (:health-potion) (use-health-potion state idx)
-                          (:attack-potion) (use-attack-potion state idx)
-                          (:defence-potion) (use-defence-potion state idx)
-                          (:scroll) (use-scroll state item idx)
-                          (ent/+msg state (str "You break " (:itype item) " when using it." )))]
-      (update-in changed-state [:player :components :inventory] remove-nth idx))
-    (catch IndexOutOfBoundsException e (ent/+msg state "No such item"))  
-    (catch NumberFormatException e (ent/+msg state "No such item"))))
+(defn equip-item [state item idx]
+  (let [nstate (not (get item :equipped false))]
+    (assoc-in state [:player :components :inventory idx :equipped] nstate)))
+
+(defn use-selected-item [state]
+  (let [idx (get-in state [:arrow-pos]) 
+        item (get-in state [:player :components :inventory idx])
+        changed-state (case (:itype item)
+                        (:health-potion) (use-health-potion state idx)
+                        (:attack-potion) (use-attack-potion state idx)
+                        (:defence-potion) (use-defence-potion state idx)
+                        (:scroll) (use-scroll state item idx)
+                        (:weapon :armor) (equip-item state item idx)
+                        (ent/+msg state (str "You break " (:itype item) " when using it." )))]
+    changed-state))
 
 (defn drop-item [state key-pressed]
   (try
@@ -207,6 +219,20 @@
             (update-in [:player :components :inventory] conj item-to-add)))
       (ent/+msg state "Nothing to pickup"))))
 
+(defn handle-inventory [state movement]
+  (case movement
+    (:up) (update-in state [:arrow-pos] #(max 0 (dec %))) 
+    (:down) (update-in state [:arrow-pos] #(min
+                                             (dec (count (get-in state [:player :components :inventory])))
+                                             (inc %)))
+    (:use) (-> state
+               (use-selected-item)
+               (assoc-in [:state] :used-item))
+    (:exit) (assoc-in state [:state] :playing)
+    state)
+  )
+
+;; Overall
 (defn refresh-visibility [state]
   (if (:no-fog state)
     (-> state

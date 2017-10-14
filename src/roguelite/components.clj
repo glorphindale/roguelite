@@ -56,6 +56,12 @@
       (str "You see: " (-> gobject :components :item-props describe-item))
       (str "You see: " (ent/pretty-name gobject)))))
 
+(defn describe-equipment [item]
+  (let [equipped? (get-in item [:equipped] false)]
+    (if equipped?
+      "(equipped)"
+      "")))
+
 (defn roam [state gobject-idx]
   (let [direction (rand-nth [[1 1] [1 -1] [-1 1] [-1 -1] [0 1] [1 0] [0 -1] [-1 0]])]
     (update-in state [:objects gobject-idx] #(move/move-gobject state % direction))))

@@ -28,6 +28,17 @@
       (35) [-1 1]  (40) [0 1]  (34) [1 1]
       [0 0])))
 
+(defn event->inventory [event]
+  (case (long (:key-code event))
+    (32 10) :use
+    (38) :up
+    (40) :down
+    (case (:key event)
+      (:q) :exit
+      (:w :up) :up
+      (:s :down) :down
+      :noop)))
+
 (defn process-movement [state dir]
   (-> state
       (game/one-step dir)
@@ -42,9 +53,8 @@
                     (if (= (:key event) :r)
                       (game/inject-player (game/new-game game/field-size))
                       state))
-      (:use-mode) (-> state
-                      (game/use-item (:key event))
-                      (assoc-in [:state] :used-item))
+      (:inventory-mode) (-> state
+                            (game/handle-inventory (event->inventory event)))
       (:drop-mode) (-> state
                        (game/drop-item (:key event))
                        (assoc-in [:state] :dropped-item))
@@ -52,7 +62,9 @@
         ;;; Cheat codes for debugging
         (:O) (assoc-in state [:no-fog] true)
         (:o) (assoc-in state [:no-fog] false)
-        (:u) (assoc-in state [:state] :use-mode)
+        (:u) (-> state
+                 (assoc-in [:arrow-pos] 0) 
+                 (assoc-in [:state] :inventory-mode))
         (:d) (assoc-in state [:state] :drop-mode)
         (:>) (game/try-descend state)
         (:S) (do
@@ -123,7 +135,7 @@
 (defn put-tile [tile is-lit]
   (if (get-in tile [:props :stairs] false)
     (q/with-fill (get-in tile-colors [:stairs is-lit])
-      (q/text-char (otype->symb :stairs) 4 -4))
+      (q/text-char (otype->symb :stairs) 4 -2))
     (if (:passable tile)
       (q/with-fill (get-in tile-colors [:floor is-lit])
         (q/text-char (otype->symb :floor) 4 -4))
@@ -166,6 +178,20 @@
     (q/with-fill [200 0 0]
       (q/rect 60 -16 border 18 3))
     (q/text (str "HP: " hp "/" max-hp) 0 0)))
+
+(defn- draw-inventory [state]
+  (q/with-translation [220 120]
+    (q/with-fill [20 20 20]
+      (q/rect 0 0 400 400 4))
+    (let [arrow-pos (+ 40 (* 16 (get-in state [:arrow-pos] 0)))
+          items (map #(str (comps/describe-item %) " " (comps/describe-equipment %))
+                     (get-in state [:player :components :inventory]))
+          inventory (clojure.string/join "\n" items)]
+      (q/text "Inventory" 120 20)
+      (q/text inventory 20 40)
+      (q/text ">" 0 arrow-pos)))
+)
+
 
 (def field-start [100 80])
 
@@ -214,14 +240,6 @@
     (q/text "'u' to use an item, 'p' to pickup an item " 0 20)
     (q/text "'S' to save, '>' to go downstairs" 0 40))
 
-  ;;; Inventory
-  (q/with-translation [720 460]
-    (let [inventory (clojure.string/join "\n"
-                                         (map #(str (inc (first %)) " " (-> % second comps/describe-item))
-                                              (map-indexed vector (get-in state [:player :components :inventory]))))]
-      (q/text "Inventory" 0 0)
-      (q/text inventory 10 20)))
-
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]
       (q/with-translation [0 0]
@@ -245,7 +263,11 @@
           (q/text (str "") 0 0)))
       (q/with-fill [255 255 0]
         (let [messages (filter (complement nil?) (flatten (:messages state)))]
-          (q/text (str (clojure.string/join "\n" (take-last 18 messages))) 0 32))))))
+          (q/text (str (clojure.string/join "\n" (take-last 18 messages))) 0 32)))))
+
+  ;;; Inventory
+  (if (= (:state state) :inventory-mode)
+    (draw-inventory state)))
 
 (defn draw-menu [state]
   (q/background 0)

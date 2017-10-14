@@ -121,3 +121,7 @@
     * Make monsters increase in stats
     * Rebalance level progression
     * Add rudimentary equipment system
+
+14.10.2017
+    * Started remaking inventory - interactive screen
+    * Allow equpping/deequipping items, using potions

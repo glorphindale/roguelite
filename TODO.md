@@ -13,6 +13,7 @@ UI
 
 Inventory
     * Allow to equip items
+    * allow to drop items
 
 Balance
     * EXP gain formula is bad
