@@ -64,11 +64,11 @@
 ;;; ===================================== Object gen
 (def monsters
   {:rat {:attacker {:attack 5}
-         :defender {:defence 1 :max-hp 15 :hp 15}
+         :defender {:defence 0 :max-hp 15 :hp 15}
          :sound "squeaks"
          :movement :roam}
-   :zombie {:attacker {:attack 15}
-            :defender {:defence 5 :max-hp 70 :hp 70}
+   :zombie {:attacker {:attack 20}
+            :defender {:defence 5 :max-hp 100 :hp 100}
             :sound "growls"
             :movement :hunt}
    :troll {:attacker {:attack 25}
@@ -92,7 +92,7 @@
   (-> monster
       (update-in [:components :defender :hp] #(int (+ % (* 1.6 level))))
       (update-in [:components :defender :max-hp] #(int (+ % (* 1.6 level))))
-      (update-in [:components :defender :defence] #(+ % (* 7 level)))
+      (update-in [:components :defender :defence] #(+ % (* 5 level)))
       (update-in [:components :attacker :attack] #(int (+ % (* 1.6 level))))))
 
 (defn place-monster [available-monsters level room]
@@ -108,7 +108,7 @@
 
 ;; ============================= Items
 (def items-table
-  {1 {:weapon 1}
+  {1 {:weapon 1 :armor 1}
    2 {:health-potion 2 :defence-potion 1 :weapon 1}
    3 {:attack-potion 1 :health-potion 2 :defence-potion 1 :scroll 1 :armor 1}
    4 {:attack-potion 1 :health-potion 2 :scroll 1 :armor 1}
@@ -118,8 +118,8 @@
 (defn make-item [itype level]
   (let [item {:itype itype}]
     (case itype
-      (:armor) (merge item {:variant :chainmail :defence (* level 5)})
-      (:weapon) (merge item {:variant :dagger :attack (* level 10)})
+      (:armor) (merge item {:variant :chainmail :position :body :defence (* level 3)})
+      (:weapon) (merge item {:variant :dagger :position :right-hand :attack (* level 8)})
       (:scroll) (merge item {:effect (rand-nth [:lightning :aggro :pacify])})
       item)))
 

@@ -125,3 +125,8 @@
 14.10.2017
     * Started remaking inventory - interactive screen
     * Allow equpping/deequipping items, using potions
+
+21.10.2017
+    * Make proper equipment - only 1 weapon/armor can be equipped at the same time
+    * Dropping items uses the same screen
+    * Rebalance items and monsters

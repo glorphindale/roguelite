@@ -18,10 +18,10 @@
 ;;; Input processing
 (defn event->direction [event]
   (case (:key event)
-    (:w :up) [0 -1]
-    (:s :down) [0 1]
-    (:a :left) [-1 0]
-    (:d :right) [1 0]
+    (:up) [0 -1]
+    (:down) [0 1]
+    (:left) [-1 0]
+    (:right) [1 0]
     (case (long (:key-code event))
       (36) [-1 -1] (38) [0 -1] (33) [1 -1]
       (37) [-1 0]              (39) [1 0]
@@ -35,8 +35,9 @@
     (40) :down
     (case (:key event)
       (:q) :exit
-      (:w :up) :up
-      (:s :down) :down
+      (:up) :up
+      (:down) :down
+      (:d) :drop
       :noop)))
 
 (defn process-movement [state dir]
@@ -55,17 +56,13 @@
                       state))
       (:inventory-mode) (-> state
                             (game/handle-inventory (event->inventory event)))
-      (:drop-mode) (-> state
-                       (game/drop-item (:key event))
-                       (assoc-in [:state] :dropped-item))
       (case (:key event)
         ;;; Cheat codes for debugging
         (:O) (assoc-in state [:no-fog] true)
         (:o) (assoc-in state [:no-fog] false)
-        (:u) (-> state
-                 (assoc-in [:arrow-pos] 0) 
+        (:i) (-> state
+                 (assoc-in [:arrow-pos] 0)
                  (assoc-in [:state] :inventory-mode))
-        (:d) (assoc-in state [:state] :drop-mode)
         (:>) (game/try-descend state)
         (:S) (do
                (saving/save-game state)
@@ -128,7 +125,7 @@
       (let [nx (* tile-size (:posx gobject))
             ny (* tile-size (:posy gobject))]
         (q/text-char (-> gobject :otype otype->symb) nx ny)))
-    (catch Exception e (q/text (str "Exception: " e) 20 20))  
+    (catch Exception e (q/text (str "Exception: " e) 20 20))
     ))
 
 
@@ -183,7 +180,7 @@
   (q/with-translation [220 120]
     (q/with-fill [20 20 20]
       (q/rect 0 0 400 400 4))
-    (let [arrow-pos (+ 40 (* 16 (get-in state [:arrow-pos] 0)))
+    (let [arrow-pos (+ 40 (* 15 (get-in state [:arrow-pos] 0)))
           items (map #(str (comps/describe-item %) " " (comps/describe-equipment %))
                      (get-in state [:player :components :inventory]))
           inventory (clojure.string/join "\n" items)]
@@ -236,9 +233,14 @@
         (draw-gameobject player))))
 
   (q/with-translation [100 650]
-    (q/text "a/w/s/d/arrows to move and attack, spacebar to wait" 0 0)
-    (q/text "'u' to use an item, 'p' to pickup an item " 0 20)
-    (q/text "'S' to save, '>' to go downstairs" 0 40))
+    (if (= :inventory-mode (:state state))
+      (do
+        (q/text "arrows to move, enter/space to use, 'd' to drop" 0 0)
+        (q/text "'q' to leave inventory screen" 0 20))
+      (do
+        (q/text "arrows to move and attack, spacebar to wait" 0 0)
+        (q/text "'i' for inventory screen, 'p' to pickup an item " 0 20)
+        (q/text "'S' to save, '>' to go downstairs" 0 40))))
 
   (q/with-translation [720 40]
     (q/with-fill [255 255 255]

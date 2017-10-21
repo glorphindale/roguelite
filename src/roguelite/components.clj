@@ -26,12 +26,9 @@
 (defn describe-defender [gobject]
   (when-let [defender (get-in gobject [:components :defender])]
     (let [ratio (/ (:hp defender) (:max-hp defender))
-          defence (get-in gobject [:components :defender :defence])]
-      (cond
-       (< ratio 0.3) "It is severly injured."
-       (< ratio 0.7) "It is injured."
-       (< ratio 1) "It is slightly injured."
-       (>= ratio 1) "It is uninjured."))))
+          defence (get-in gobject [:components :defender :defence])
+          description (str "Attacks for " (get-in gobject [:components :attacker :attack]) ", health " (:hp defender) "/" (:max-hp defender) "(" defence ")")]
+      description)))
 
 (defn itype->txt [itype]
   (case itype

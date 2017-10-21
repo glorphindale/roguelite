@@ -49,8 +49,8 @@
           (assoc-in [:components :progression :level] inc) 
           (assoc-in [:components :defender :max-hp] new-hp) 
           (assoc-in [:components :defender :hp] new-hp) 
-          (update-in [:components :defender :defence] #(+ % 2)) 
-          (update-in [:components :attacker :attack] #(+ % 3)) 
+          (update-in [:components :defender :defence] #(+ % 1)) 
+          (update-in [:components :attacker :attack] #(+ % 2)) 
           (assoc-in [:components :progression :exp] 0)))))
 
 (defn process-gobject [state gobject-idx]
@@ -177,9 +177,17 @@
       (remove-item changed-state idx))
     (catch Exception e (ent/+msg state e))))
 
+(defn- unequip [item position]
+  (if (= position (:position item))
+    (assoc item :equipped false)
+    item))
+
 (defn equip-item [state item idx]
-  (let [nstate (not (get item :equipped false))]
-    (assoc-in state [:player :components :inventory idx :equipped] nstate)))
+  (let [position (get item :position)
+        unequipped-inventory (vec (map #(unequip % position) (get-in state [:player :components :inventory])))
+        ninventory (assoc-in unequipped-inventory [idx :equipped] true)
+        nstate (assoc-in state [:player :components :inventory] ninventory)]
+    (ent/+msg nstate (str "You equip " (comps/describe-item item)))))
 
 (defn use-selected-item [state]
   (let [idx (get-in state [:arrow-pos]) 
@@ -193,16 +201,11 @@
                         (ent/+msg state (str "You break " (:itype item) " when using it." )))]
     changed-state))
 
-(defn drop-item [state key-pressed]
-  (try
-    (let [idx (Integer/parseInt (name key-pressed)) 
-          item (get-in state [:player :components :inventory idx])
-          [px py] (ent/get-pos (:player state))]
-      (-> state 
-        (update-in [:player :components :inventory] remove-nth idx)
-        (update-in [:objects] conj (ent/->GameObject px py :item {:passable true :item-props item}))))
-    (catch IndexOutOfBoundsException e (ent/+msg state "No such item"))  
-    (catch NumberFormatException e (ent/+msg state "No such item"))))
+(defn drop-selected-item [state]
+  (let [idx (get-in state [:arrow-pos]) 
+        item (get-in state [:player :components :inventory idx])
+        nstate (ent/+msg state (str "Dropped " (comps/describe-item item)))]
+    (remove-item nstate idx)))
 
 (defn pickup [state]
   (let [px (-> state :player :posx)
@@ -220,17 +223,21 @@
       (ent/+msg state "Nothing to pickup"))))
 
 (defn handle-inventory [state movement]
-  (case movement
-    (:up) (update-in state [:arrow-pos] #(max 0 (dec %))) 
-    (:down) (update-in state [:arrow-pos] #(min
-                                             (dec (count (get-in state [:player :components :inventory])))
-                                             (inc %)))
-    (:use) (-> state
-               (use-selected-item)
-               (assoc-in [:state] :used-item))
-    (:exit) (assoc-in state [:state] :playing)
-    state)
-  )
+  (if (> (count (get-in state [:player :components :inventory])) 0)
+    (case movement
+      (:up) (update-in state [:arrow-pos] #(max 0 (dec %))) 
+      (:down) (update-in state [:arrow-pos] #(min
+                                               (dec (count (get-in state [:player :components :inventory])))
+                                               (inc %)))
+      (:use) (-> state
+                 (use-selected-item)
+                 (assoc-in [:state] :used-item))
+      (:drop) (-> state
+                  (drop-selected-item)
+                  (assoc-in [:state] :used-item)) 
+      (:exit) (assoc-in state [:state] :playing)
+      state)
+    (assoc-in state [:state] :playing)))
 
 ;; Overall
 (defn refresh-visibility [state]
