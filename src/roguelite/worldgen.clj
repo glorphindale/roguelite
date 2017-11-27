@@ -67,7 +67,7 @@
          :defender {:defence 0 :max-hp 15 :hp 15}
          :sound "squeaks"
          :movement :roam}
-   :zombie {:attacker {:attack 20}
+   :zombie {:attacker {:attack 40}
             :defender {:defence 5 :max-hp 100 :hp 100}
             :sound "growls"
             :movement :hunt}
@@ -142,7 +142,7 @@
                     :player
                     {:inventory [(make-item :health-potion 1)]
                      :progression {:exp 0 :max-exp 30 :level 1}
-                     :attacker {:attack 0}
+                     :attacker {:attack 5}
                      :defender {:defence 0 :max-hp 100 :hp 100}}))
 
 (defn place-player
