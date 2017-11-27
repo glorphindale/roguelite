@@ -60,6 +60,9 @@
         ;;; Cheat codes for debugging
         (:O) (assoc-in state [:no-fog] true)
         (:o) (assoc-in state [:no-fog] false)
+        ;;; See how world smoothing looks
+        (:q) (game/smooth-map state)
+        ;;; Actual controls
         (:i) (-> state
                  (assoc-in [:arrow-pos] 0)
                  (assoc-in [:state] :inventory-mode))

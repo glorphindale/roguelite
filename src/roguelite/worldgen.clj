@@ -191,17 +191,40 @@
           (carve-v-tunnel cx1 cy1 cy2)
           (carve-h-tunnel cx1 cx2 cy2)))))
 
+;; Some smoothing is in order
+(defn nearby [[px py]]
+  (for [x [-1 0 1]
+        y [-1 0 1]]
+    [(+ px x) (+ py y)]))
+
+(defn smooth-tile [tiles [x y]]
+  (let [neighbours-pos (nearby [x y])
+        neighbours (map #(get-in tiles % {:passable false}) neighbours-pos)
+        passable-count (count (filter :passable neighbours))
+        new-state (or (> passable-count 4) (get-in tiles [x y :passable]))]
+    (-> tiles
+        (assoc-in [x y :passable] new-state)
+        (assoc-in [x y :blocks-sight] (not new-state)))))
+
+(defn smooth-map [tiles]
+  (reduce #(smooth-tile %1 %2)
+          tiles
+          (for [[x row] tiles
+                [y _] row]
+            [x y])))
+
+;; Highest level floor generation
 (defn regular-floor [map-size room-config]
   (let [full-map (make-map map-size)
         rooms (gen-rooms map-size room-config)
         carved-map (reduce #(carve-room %1 %2) full-map rooms)]
     (letfn [(connect [world [room1 room2]] (connect-two-rooms world room1 room2))]
-      {:tiles (place-stairs-down (reduce connect carved-map (make-pairs rooms)) rooms)
+      {:tiles (smooth-map (place-stairs-down (reduce connect carved-map (make-pairs rooms)) rooms))
        :rooms rooms})))
 
 (defn starting-floor []
   (let [full-map (make-map [10 10])
         rooms [(make-room 2 2 3 2) (make-room 4 4 3 3)]
         carved-map (reduce #(carve-room %1 %2) full-map rooms)]
-    {:tiles (place-stairs-down carved-map rooms)
+    {:tiles (smooth-map (place-stairs-down carved-map rooms))
      :rooms rooms}))

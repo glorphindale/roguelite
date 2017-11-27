@@ -240,6 +240,9 @@
     (assoc-in state [:state] :playing)))
 
 ;; Overall
+(defn smooth-map [state]
+  (update-in state [:world] #(wgen/smooth-map %)))
+
 (defn refresh-visibility [state]
   (if (:no-fog state)
     (-> state
