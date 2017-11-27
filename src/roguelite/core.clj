@@ -13,7 +13,7 @@
 (def screen-size [1500 700])
 
 (defn init-game []
-  {:state :menu :selected 0})
+  {:redraw true :state :menu :selected 0})
 
 ;;; Input processing
 (defn event->direction [event]
@@ -89,8 +89,9 @@
 (defn key-pressed [state event]
   (try
     (case (:state state)
-      (:menu) (key-pressed-menu state event)
-      (key-pressed-int state event))
+      (:menu)(key-pressed-menu state event) 
+      (-> (key-pressed-int state event)
+          (assoc :redraw true)))
     (catch Exception e (q/text (str "Exception: " e) 20 20))))
 
 ;;;;; Drawing
@@ -289,20 +290,26 @@
         (q/text "->" -40 marker-y)))))
 
 (defn draw-state [state]
-  (case (:state state)
-    (:menu) (draw-menu state)
-    (draw-gameplay state)))
+  (when (get state :redraw)
+    (case (:state state)
+      (:menu) (draw-menu state)
+      (draw-gameplay state))))
 
 ;;;;; Setup
 (defn setup []
-  (q/frame-rate 30)
+  (q/frame-rate 24)
   (q/color-mode :rgb)
   (let [font (q/load-font "DFBisasam16x16-16.vlw")]
     (q/text-font font 16))
   (init-game))
 
 (defn update-state [state]
-  state)
+  (cond
+    (get state :skip-redraw) (-> state
+                                 (dissoc :redraw)
+                                 (dissoc :skip-redraw))
+    (get state :redraw) (assoc state :skip-redraw true)
+    :default state))
 
 (q/defsketch roguelite
   :title "Roguelite"
