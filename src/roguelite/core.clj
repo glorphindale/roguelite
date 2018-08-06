@@ -6,7 +6,8 @@
             [roguelite.movement :as move]
             [roguelite.game :as game]
             [roguelite.saving :as saving])
-  (:import [java.awt.event KeyEvent]))
+  (:import [java.awt.event KeyEvent])
+  (:gen-class))
 
 (set! *warn-on-reflection* true)
 
@@ -92,7 +93,7 @@
 (defn key-pressed [state event]
   (try
     (case (:state state)
-      (:menu)(key-pressed-menu state event) 
+      (:menu) (key-pressed-menu state event)
       (-> (key-pressed-int state event)
           (assoc :redraw true)))
     (catch Exception e (q/text (str "Exception: " e) 20 20))))
@@ -314,7 +315,7 @@
     (get state :redraw) (assoc state :skip-redraw true)
     :default state))
 
-(q/defsketch roguelite
+#_(q/defsketch roguelite
   :title "Roguelite"
   :size screen-size
   ; setup function called only once, during sketch initialization.
@@ -332,5 +333,12 @@
 (defn -main
   "Command-line entry point."
   [& raw-args]
-  (println "Hello")
+  (q/sketch :title "Roguelite"
+            :size screen-size
+            :setup setup
+            :update update-state
+            :draw draw-state
+            :features []
+            :key-pressed key-pressed
+            :middleware [m/fun-mode])
 )
